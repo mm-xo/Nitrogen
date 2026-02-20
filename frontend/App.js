@@ -1,13 +1,20 @@
 import * as React from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { AppNavigator } from "./src/navigation/AppNavigator";
-import { StyleSheet, View } from 'react-native';
+
+import { StyleSheet, Text, View } from 'react-native';
+import { COLORS } from "./src/themes/colors";
+import { SPACING } from "./src/themes/layout";
+import ExpoLocation from "./src/location/Expo-Location";
+import { LocationProvider } from "./src/context/Locationcontext";
+import { StatusBar } from "expo-status-bar";
+
+
 export default function App() {
   return (
     <LocationProvider>
-      <View style={styles.container}>
-        <ExpoLocation />
-        <StatusBar style="auto" />
+      <View>
+        <Text>Hello World</Text>
+        {/* <ExpoLocation /> */}
+        {/* <StatusBar style="auto" /> */}
       </View>
     </LocationProvider>
   );
