@@ -2,11 +2,12 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { COLORS } from './src/themes/colors';
 import { SPACING } from './src/themes/layout';
+import ExpoLocation from './src/Expo-Location';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+      <Text>{ExpoLocation()}</Text>
       <StatusBar style="auto" />
     </View>
   );
