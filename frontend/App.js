@@ -1,8 +1,6 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import { COLORS } from './src/themes/colors';
-import { SPACING } from './src/themes/layout';
-import ExpoLocation from './src/location/Expo-Location';
+import * as React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { AppNavigator } from "./src/navigation/AppNavigator";
 
 export default function App() {
   return (
@@ -10,16 +8,8 @@ export default function App() {
       <ExpoLocation />
       <StatusBar style="auto" />
     </View>
+    <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: SPACING.md
-
-  },
-});
