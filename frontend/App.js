@@ -7,7 +7,7 @@ import ExpoLocation from './src/location/Expo-Location';
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>{ExpoLocation()}</Text>
+      <ExpoLocation />
       <StatusBar style="auto" />
     </View>
   );

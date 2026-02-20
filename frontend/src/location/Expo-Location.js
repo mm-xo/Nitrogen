@@ -17,8 +17,8 @@ export default function ExpoLocation() {
           timeInterval: 2000,
           distanceInterval: 5,
         },
-        (loc) => {
-          setLocation(loc.coords);
+        ({ coords }) => {
+          setCoordinates({ lat: coords.latitude, lng: coords.longitude });
         }
       );
     })();
@@ -29,5 +29,5 @@ export default function ExpoLocation() {
     } else if (location) {
         text = JSON.stringify(location);
     }
-    return text;
+    return null;
 }
