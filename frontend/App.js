@@ -1,6 +1,7 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-
+import * as React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { AppNavigator } from "./src/navigation/AppNavigator";
+import { StyleSheet, View } from 'react-native';
 export default function App() {
   return (
     <View style={styles.container}>
@@ -8,16 +9,24 @@ export default function App() {
     
       <StatusBar style="auto" />
     </View>
+    <LocationProvider>
+      <View style={styles.container}>
+        <ExpoLocation />
+        <StatusBar style="auto" />
+      </View>
+    </LocationProvider>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: SPACING.md,
   },
    
 
 });
+
+
