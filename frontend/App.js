@@ -1,11 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
-import ExpoLocation from './src/Expo-Location';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>{ExpoLocation()}</Text>
+      <Text>Open up App.js to start working on your app!</Text>
       <StatusBar style="auto" />
     </View>
   );
