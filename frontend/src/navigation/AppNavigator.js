@@ -13,9 +13,9 @@ const Tabs = createBottomTabNavigator();
 function MainTabs() {
     return (
         <Tabs.Navigator>
-            <Tabs.screen name="Map" component={MapScreen} />
-            <Tabs.screen name="CreateAlert" component={CreateAlertScreen} />
-            <Tabs.screen name="Settings" component={SettingsScreen} />
+            <Tabs.Screen name="Map" component={MapScreen} />
+            <Tabs.Screen name="CreateAlert" component={CreateAlertScreen} />
+            <Tabs.Screen name="Settings" component={SettingsScreen} />
         </Tabs.Navigator>
     );
 }

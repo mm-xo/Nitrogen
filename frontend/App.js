@@ -1,22 +1,27 @@
 import * as React from "react";
 
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from "@react-navigation/native";
+import { StyleSheet, Text, View, Button } from 'react-native';
 import { COLORS } from "./src/themes/colors";
 import { SPACING } from "./src/themes/layout";
+// import { useRouter } from "expo-router";
+import { AppNavigator } from "./src/navigation/AppNavigator";
+
 import ExpoLocation from "./src/location/Expo-Location";
 import { LocationProvider } from "./src/context/Locationcontext";
 import { StatusBar } from "expo-status-bar";
 
 
 export default function App() {
+  // const router = useRouter();
+
   return (
     <LocationProvider>
-      <View>
-        <Text>Hello World</Text>
-        {/* <ExpoLocation /> */}
-        {/* <StatusBar style="auto" /> */}
-      </View>
+      <NavigationContainer>
+        <AppNavigator/>
+      </NavigationContainer>
     </LocationProvider>
+
   );
 }
 const styles = StyleSheet.create({

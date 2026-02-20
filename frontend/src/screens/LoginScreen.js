@@ -1,7 +1,7 @@
 import * as React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Button } from "react-native";
 
-export function LoginScreen() {
+export function LoginScreen({ onLogin }) {
     return (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
                 <Text style={{ fontSize: 24, fontWeight: "600" }}>Login</Text>
