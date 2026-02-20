@@ -4,6 +4,10 @@ import { AppNavigator } from "./src/navigation/AppNavigator";
 
 export default function App() {
   return (
+    <View style={styles.container}>
+      <ExpoLocation />
+      <StatusBar style="auto" />
+    </View>
     <NavigationContainer>
       <AppNavigator />
     </NavigationContainer>
