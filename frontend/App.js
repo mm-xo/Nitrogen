@@ -17,6 +17,7 @@ export default function App() {
 
   return (
     <LocationProvider>
+      <ExpoLocation />
       <NavigationContainer>
         <AppNavigator/>
       </NavigationContainer>
