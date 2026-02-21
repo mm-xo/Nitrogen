@@ -16,9 +16,10 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { COLORS } from "../themes/colors";
 import { SPACING, RADIUS } from "../themes/layout";
-import { getAlerts } from "../map/AlterPins";
+import { getMyAlerts } from "../map/AlterPins";
 import { AuthBackground } from "../components/AuthBackground";
 import { CATEGORY_LABELS, CATEGORY_ICONS } from "../constants/categories";
+import { useAuth } from "../context/AuthContext";
 
 function formatDate(iso) {
     if (!iso) return "";
@@ -67,7 +68,8 @@ function AlertRow({ item }) {
     );
 }
 
-export function Alerts() {
+export function MyAlertsScreen() {
+    const { session } = useAuth();
     const navigation = useNavigation();
     const [alerts, setAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -79,15 +81,15 @@ export function Alerts() {
         else setLoading(true);
         setError(null);
         try {
-            const data = await getAlerts();
-            setAlerts(data);
+            const data = await getMyAlerts(session?.user?.id);
+            setAlerts(data ?? []);
         } catch (e) {
-            setError(e?.message ?? "Could not load alerts.");
+            setError(e?.message ?? "Could not load your alerts.");
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [session?.user?.id]);
 
     useFocusEffect(
         useCallback(() => {
@@ -100,7 +102,7 @@ export function Alerts() {
             <SafeAreaView style={[styles.centered, styles.container]} edges={["top"]}>
                 <AuthBackground />
                 <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.emptyText}>Loading alerts…</Text>
+                <Text style={styles.emptyText}>Loading your alerts…</Text>
                 <TouchableOpacity
                     onPress={() => navigation.getParent()?.navigate("CreateAlert")}
                     activeOpacity={0.85}
@@ -131,14 +133,14 @@ export function Alerts() {
                 <View style={styles.centered}>
                     <View style={styles.emptyIconWrap}>
                         <MaterialCommunityIcons
-                            name="bell-outline"
+                            name="format-list-bulleted"
                             size={36}
                             color={COLORS.textSecondary}
                         />
                     </View>
-                    <Text style={styles.emptyTitle}>Alerts</Text>
+                    <Text style={styles.emptyTitle}>My Alerts</Text>
                     <Text style={styles.emptyText}>
-                        No alerts yet. Tap the button below to create one.
+                        You haven't created any alerts yet. Tap the button below to create one.
                     </Text>
                 </View>
             ) : (
@@ -157,15 +159,15 @@ export function Alerts() {
                 />
             )}
 
-                <TouchableOpacity
-                    onPress={() => navigation.getParent()?.navigate("CreateAlert")}
-                    activeOpacity={0.85}
-                    style={styles.fab}
-                >
-                    <MaterialCommunityIcons name="plus" size={28} color="#FFF" />
-                </TouchableOpacity>
-            </SafeAreaView>
-        );
+            <TouchableOpacity
+                onPress={() => navigation.getParent()?.navigate("CreateAlert")}
+                activeOpacity={0.85}
+                style={styles.fab}
+            >
+                <MaterialCommunityIcons name="plus" size={28} color="#FFF" />
+            </TouchableOpacity>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({

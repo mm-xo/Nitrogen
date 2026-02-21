@@ -4,6 +4,7 @@ import * as React from "react";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 import { StyleSheet, Text, View, Button } from 'react-native';
@@ -24,15 +25,16 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-    <LocationProvider>
-      <ExpoLocation />
-      <NavigationContainer>
-        <AppNavigator/>
-      </NavigationContainer>
-    </LocationProvider>
-    </AuthProvider>
-
+    <SafeAreaProvider>
+      <AuthProvider>
+        <LocationProvider>
+          <ExpoLocation />
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </LocationProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 const styles = StyleSheet.create({

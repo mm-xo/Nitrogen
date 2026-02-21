@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import LocationMapView from "../map/MapView";
 import { COLORS } from "../themes/colors";
@@ -23,10 +24,10 @@ export function MapScreen() {
     : { latitude: CAMPUS_CENTER.lat, longitude: CAMPUS_CENTER.lng };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <AuthBackground />
       <LocationMapView coordinates={coordinates} refreshTrigger={refreshTrigger} />
-    </View>
+    </SafeAreaView>
   );
 }
 
