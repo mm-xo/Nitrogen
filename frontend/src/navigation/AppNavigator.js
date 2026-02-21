@@ -11,6 +11,7 @@ import { MapScreen } from "../screens/MapScreen";
 import { Alerts } from "../screens/Alerts";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { CreateAlertScreen } from "../screens/CreateAlertScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
 import { COLORS } from "../themes/colors";
 import { SPACING } from "../themes/layout";
 
@@ -55,6 +56,16 @@ function MainTabs() {
                     title: "Alerts",
                     tabBarIcon: ({ color, size }) => (
                         <MaterialCommunityIcons name="bell-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{
+                    title: "Profile",
+                    tabBarIcon: ({ color, size }) => (
+                        <MaterialCommunityIcons name="account-circle-outline" size={size} color={color} />
                     ),
                 }}
             />
