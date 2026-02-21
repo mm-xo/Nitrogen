@@ -26,7 +26,16 @@ import { supabase } from "../../lib/supabase";
 import { isWithinCampus, CAMPUS_CENTER } from "../location/Distance";
 import { withTimeout } from "../utils/promiseUtils";
 import { DARK_COLORS } from "../themes/colors";
-import { DB_CATEGORY_MAP, CATEGORY_OPTIONS } from "../constants/categories";
+
+const DB_CATEGORY_MAP = {
+  safety: "Safety",
+  food: "Food",
+  social: "Social",
+  academic: "Academic",
+  sports: "Sports",
+  lostfound: "LostFound",
+  events: "Events",
+};
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 100;
@@ -74,6 +83,16 @@ export function CreateAlertScreen() {
   const [useTestLocation, setUseTestLocation] = useState(false);
   const [showExpiresPicker, setShowExpiresPicker] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  const CATEGORY_OPTIONS = [
+    { value: "food", label: "Food", icon: "food" },
+    { value: "safety", label: "Safety", icon: "alert-circle" },
+    { value: "social", label: "Social", icon: "account-group" },
+    { value: "academic", label: "Academic", icon: "school" },
+    { value: "sports", label: "Sports", icon: "trophy" },
+    { value: "lostfound", label: "Lost & Found", icon: "magnify" },
+    { value: "events", label: "Events", icon: "bullhorn" },
+  ];
 
   const titleValid = title.length >= TITLE_MIN && title.length <= TITLE_MAX;
   const descValid = desc.length >= DESC_MIN && desc.length <= DESC_MAX;
