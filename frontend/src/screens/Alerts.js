@@ -17,18 +17,7 @@ import { COLORS } from "../themes/colors";
 import { SPACING, RADIUS } from "../themes/layout";
 import { getAlerts } from "../map/AlterPins";
 import { AuthBackground } from "../components/AuthBackground";
-
-const CATEGORY_LABELS = {
-    Safety: "Safety",
-    FreeFood: "Free Food",
-    Event: "Events",
-};
-
-const CATEGORY_ICONS = {
-    Safety: "alert-circle",
-    FreeFood: "food",
-    Event: "bullhorn",
-};
+import { CATEGORY_LABELS, CATEGORY_ICONS } from "../constants/categories";
 
 function formatDate(iso) {
     if (!iso) return "";

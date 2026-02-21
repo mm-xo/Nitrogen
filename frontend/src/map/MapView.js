@@ -1,44 +1,58 @@
 import React from 'react';
-import MapView, { Marker, Circle} from 'react-native-maps';
-import { StyleSheet, View, ActivityIndicator, Text, Image } from 'react-native';
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import {getAlertCoordinates} from "./AlterPins";
+import MapView, { Marker, Circle } from 'react-native-maps';
+import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { getAlertCoordinates } from "./AlterPins";
+import { CATEGORY_COLORS } from "../constants/categories";
+import { supabase } from "../../lib/supabase";
 
 const DEFAULT_DELTA = 0.005;
 const UNI_LAT = 49.806957;
 const UNI_LONG = -97.139759;
-  const CATEGORY_COLORS = {
-  safety: "#FF3B30",   // red
-  food: "#FF9500",     // orange
-  events: "#4834c7ff",   // green
-};
 
-export default function LocationMapView({ coordinates }) {
-  
-  
-const [alerts, setAlerts] = React.useState([]);
+function filterValidPins(rows) {
+  return (rows ?? []).filter(
+    (a) => a != null && typeof a.latitude === "number" && typeof a.longitude === "number"
+  );
+}
+
+export default function LocationMapView({ coordinates, refreshTrigger = 0 }) {
+  const [alerts, setAlerts] = React.useState([]);
   const [loadingAlerts, setLoadingAlerts] = React.useState(true);
   const [alertsError, setAlertsError] = React.useState(null);
 
-  React.useEffect(() => {
-    let mounted = true;
+  const fetchPins = React.useCallback(async () => {
+    try {
+      const rows = await getAlertCoordinates();
+      setAlerts(filterValidPins(rows));
+      setAlertsError(null);
+    } catch (e) {
+      setAlertsError(e?.message ?? String(e));
+    } finally {
+      setLoadingAlerts(false);
+    }
+  }, []);
 
-    (async () => {
-      try {
-        const rows = await getAlertCoordinates(); // ✅ await is valid here
-        
-        if (mounted) setAlerts(rows ?? []);
-      } catch (e) {
-        if (mounted) setAlertsError(e?.message ?? String(e));
-      } finally {
-        if (mounted) setLoadingAlerts(false);
-      }
-    })();
+  React.useEffect(() => {
+    setLoadingAlerts(true);
+    fetchPins();
+  }, [fetchPins, refreshTrigger]);
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("alerts-map")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "alerts" },
+        () => {
+          fetchPins();
+        }
+      )
+      .subscribe();
 
     return () => {
-      mounted = false;
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchPins]);
   const center = {
     latitude: UNI_LAT, 
     longitude: UNI_LONG,
@@ -63,39 +77,40 @@ const [alerts, setAlerts] = React.useState([]);
   return (
     <View style={styles.container}>
       <MapView
-  provider="google"
-  style={styles.map}
-  initialRegion={{
-          latitude: UNI_LAT, 
+        provider="google"
+        style={styles.map}
+        initialRegion={{
+          latitude: UNI_LAT,
           longitude: UNI_LONG,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
         showsUserLocation
->
-  {alerts.map((a, index) => (
-  <Marker
-    key={index}
-    coordinate={{
-      latitude: a.latitude,
-      longitude: a.longitude,
-    }}
-  >
-    <View
-      style={[
-        styles.dot,
-        { backgroundColor: CATEGORY_COLORS[a.category.toLowerCase()] ?? "#999" }
-      ]}
-    />
-  </Marker>
-))}
-
-         <Circle
+      >
+        {alerts.map((a) => {
+          return (
+            <Marker
+              key={a.id}
+              coordinate={{
+                latitude: a.latitude,
+                longitude: a.longitude,
+              }}
+            >
+              <View
+                style={[
+                  styles.dot,
+                  { backgroundColor: CATEGORY_COLORS[(a.category || "").toLowerCase()] ?? "#999" }
+                ]}
+              />
+            </Marker>
+          );
+        })}
+        <Circle
           center={center}
-          radius={1000} // 500 meters
-           strokeColor="blue"
+          radius={1000}
+          strokeColor="blue"
           strokeWidth={3}
-          fillColor="rgba(173, 216, 230, 0.5)" 
+          fillColor="rgba(173, 216, 230, 0.5)"
         />
       </MapView>
     </View>

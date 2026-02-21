@@ -25,14 +25,8 @@ import { useLocation } from "../context/Locationcontext";
 import { supabase } from "../../lib/supabase";
 import { isWithinCampus, CAMPUS_CENTER } from "../location/Distance";
 import { withTimeout } from "../utils/promiseUtils";
-import { CATEGORY_ICONS } from "../constants/icons";
 import { DARK_COLORS } from "../themes/colors";
-
-const DB_CATEGORY_MAP = {
-  safety: "Safety",
-  food: "FreeFood",
-  events: "Event",
-};
+import { DB_CATEGORY_MAP, CATEGORY_OPTIONS } from "../constants/categories";
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 100;
@@ -80,12 +74,6 @@ export function CreateAlertScreen() {
   const [useTestLocation, setUseTestLocation] = useState(false);
   const [showExpiresPicker, setShowExpiresPicker] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-
-  const CATEGORY_OPTIONS = [
-    { value: "safety", label: "Safety", icon: "alert-circle" },
-    { value: "food", label: "Free Food", icon: "food" },
-    { value: "events", label: "Events", icon: "bullhorn" },
-  ];
 
   const titleValid = title.length >= TITLE_MIN && title.length <= TITLE_MAX;
   const descValid = desc.length >= DESC_MIN && desc.length <= DESC_MAX;
@@ -328,7 +316,7 @@ export function CreateAlertScreen() {
 
           <View style={styles.row}>
             <MaterialCommunityIcons
-              name={CATEGORY_ICONS[category]}
+              name={CATEGORY_OPTIONS.find((o) => o.value === category)?.icon ?? "bell-outline"}
               size={20}
               color={DARK_COLORS.accent}
             />
@@ -341,7 +329,7 @@ export function CreateAlertScreen() {
           >
             <View style={styles.pickerInner}>
               <MaterialCommunityIcons
-                name={CATEGORY_ICONS[category]}
+                name={CATEGORY_OPTIONS.find((o) => o.value === category)?.icon ?? "bell-outline"}
                 size={20}
                 color={DARK_COLORS.accent}
               />
