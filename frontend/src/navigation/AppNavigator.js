@@ -29,7 +29,7 @@ function MainTabs() {
                     borderTopColor: "#E5E7EB",
                     borderTopWidth: 1,
                     paddingTop: SPACING.sm,
-                    height: 60,
+                    height: 120,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,

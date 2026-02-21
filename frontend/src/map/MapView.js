@@ -26,7 +26,7 @@ export default function LocationMapView({ coordinates }) {
     longitude: coordinates.lng,
     latitudeDelta: DEFAULT_DELTA,
     longitudeDelta: DEFAULT_DELTA,
-  };
+  }; 
 
   return (
     <View style={styles.container}>
