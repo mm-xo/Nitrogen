@@ -15,8 +15,23 @@ import { AppNavigator } from "./src/navigation/AppNavigator";
 import ExpoLocation from "./src/location/Expo-Location";
 import { LocationProvider } from "./src/context/Locationcontext";
 import { AuthProvider } from "./src/context/AuthContext";
+import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { StatusBar } from "expo-status-bar";
 
+function AppContent() {
+  const { theme } = useTheme();
+  return (
+    <>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+      <LocationProvider>
+      <ExpoLocation />
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </LocationProvider>
+    </>
+  );
+}
 
 export default function App() {
   useEffect(() => {
@@ -25,14 +40,10 @@ export default function App() {
 
   return (
     <AuthProvider>
-    <LocationProvider>
-      <ExpoLocation />
-      <NavigationContainer>
-        <AppNavigator/>
-      </NavigationContainer>
-    </LocationProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
-
   );
 }
 const styles = StyleSheet.create({

@@ -11,22 +11,23 @@ import { MapScreen } from "../screens/MapScreen";
 import { Alerts } from "../screens/Alerts";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { CreateAlertScreen } from "../screens/CreateAlertScreen";
-import { COLORS } from "../themes/colors";
+import { useTheme } from "../context/ThemeContext";
 import { SPACING } from "../themes/layout";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
 
 function MainTabs() {
+    const { colors } = useTheme();
     return (
         <Tabs.Navigator
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: COLORS.primary,
-                tabBarInactiveTintColor: COLORS.textSecondary,
+                tabBarActiveTintColor: colors.primary,
+                tabBarInactiveTintColor: colors.textSecondary,
                 tabBarStyle: {
-                    backgroundColor: COLORS.card,
-                    borderTopColor: "#E5E7EB",
+                    backgroundColor: colors.card,
+                    borderTopColor: colors.border,
                     borderTopWidth: 1,
                     paddingTop: SPACING.sm,
                     height: 60,
@@ -74,6 +75,7 @@ function MainTabs() {
 
 export function AppNavigator() {
     const { session, loading } = useAuth();
+    const { colors } = useTheme();
 
     if (loading) {
         return (
@@ -82,15 +84,15 @@ export function AppNavigator() {
                     flex: 1,
                     justifyContent: "center",
                     alignItems: "center",
-                    backgroundColor: COLORS.background,
+                    backgroundColor: colors.background,
                 }}
             >
-                <ActivityIndicator size="large" color={COLORS.primary} />
+                <ActivityIndicator size="large" color={colors.primary} />
                 <Text
                     style={{
                         marginTop: SPACING.lg,
                         fontSize: 15,
-                        color: COLORS.textSecondary,
+                        color: colors.textSecondary,
                         fontWeight: "500",
                     }}
                 >
@@ -104,8 +106,7 @@ export function AppNavigator() {
         <Stack.Navigator
             screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: COLORS.background },
-                animation: "slide_from_right",
+                contentStyle: { backgroundColor: colors.background },
             }}
         >
             {!session ? (
@@ -123,7 +124,7 @@ export function AppNavigator() {
                             headerShown: true,
                             title: "Create Alert",
                             headerStyle: {
-                                backgroundColor: COLORS.primary,
+                                backgroundColor: colors.primary,
                             },
                             headerTintColor: "#FFF",
                             headerTitleStyle: {
@@ -131,7 +132,7 @@ export function AppNavigator() {
                                 fontWeight: "600",
                             },
                             headerBackTitle: "Back",
-                            contentStyle: { backgroundColor: COLORS.background },
+                            contentStyle: { backgroundColor: colors.background },
                         }}
                     />
                 </>
