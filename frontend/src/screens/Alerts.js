@@ -10,7 +10,7 @@ import {
     Image,
     StyleSheet,
 } from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { COLORS } from "../themes/colors";
@@ -33,12 +33,14 @@ function formatDate(iso) {
     return `${diffDays}d ago`;
 }
 
-function AlertRow({ item }) {
+function AlertRow({ item, highlighted  }) {
     const label = CATEGORY_LABELS[item.category] ?? item.category;
     const icon = CATEGORY_ICONS[item.category] ?? "bell-outline";
 
     return (
-        <View style={styles.row}>
+        <View style={
+            [styles.row,
+             highlighted && styles.rowHighlighted, ]}>
             {item.photo_url ? (
                 <Image source={{ uri: item.photo_url }} style={styles.thumb} />
             ) : (
@@ -68,10 +70,15 @@ function AlertRow({ item }) {
 
 export function Alerts() {
     const navigation = useNavigation();
+const route = useRoute();                              // ← add
+    const highlightId = route.params?.highlightId ?? null; // ← add
+
+
     const [alerts, setAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
+    const flatListRef = React.useRef(null);               // ← add
 
     const loadAlerts = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
@@ -93,6 +100,15 @@ export function Alerts() {
             loadAlerts();
         }, [loadAlerts])
     );
+React.useEffect(() => {
+        if (!highlightId || alerts.length === 0) return;
+        const index = alerts.findIndex((a) => a.id === highlightId);
+        if (index === -1) return;
+        // Small delay to let the list render first
+        setTimeout(() => {
+            flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
+        }, 300);
+    }, [highlightId, alerts]);
 
     if (loading && alerts.length === 0) {
         return (
@@ -142,9 +158,22 @@ export function Alerts() {
                 </View>
             ) : (
                 <FlatList
+                 ref={flatListRef}                         
+
                     data={alerts}
                     keyExtractor={(a) => a.id}
-                    renderItem={({ item }) => <AlertRow item={item} />}
+                    renderItem={({ item }) => (<AlertRow item={item}
+                    highlighted={item.id === highlightId} />)}
+
+                    onScrollToIndexFailed={(info) => {         // ← add: prevents crash
+                    setTimeout(() => {
+                        flatListRef.current?.scrollToIndex({
+                            index: info.index,
+                            animated: true,
+                            viewPosition: 0.3,
+                        });
+                    }, 500);
+                }}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
                         <RefreshControl
@@ -297,4 +326,9 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 6,
     },
+    rowHighlighted: {
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.card,  // or a tinted version if you prefer
+},
 });
