@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState, useCallback } from "react";
+
 import {
     View,
     Text,
@@ -9,6 +10,7 @@ import {
     RefreshControl,
     Image,
     StyleSheet,
+    Share
 } from "react-native";
 import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -37,8 +39,22 @@ function AlertRow({ item, highlighted  }) {
     const label = CATEGORY_LABELS[item.category] ?? item.category;
     const icon = CATEGORY_ICONS[item.category] ?? "bell-outline";
 
+const handleShare = async () => {
+        try {
+            await Share.share({
+                title: item.title,
+                message: `🚨 ${item.title}\n\n${item.message}\n\nCategory: ${label}\nPosted: ${formatDate(item.created_at)}`,
+            });
+        } catch (e) {
+            console.error("Share error:", e);
+        }
+    };
+
     return (
-        <View style={
+        <TouchableOpacity                                 
+            onPress={handleShare}
+            activeOpacity={0.75} 
+            style={
             [styles.row,
              highlighted && styles.rowHighlighted, ]}>
             {item.photo_url ? (
@@ -64,7 +80,7 @@ function AlertRow({ item, highlighted  }) {
                     <Text style={styles.rowTime}>{formatDate(item.created_at)}</Text>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>                               // ← close tag
     );
 }
 
