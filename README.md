@@ -30,7 +30,7 @@ A campus and community alert app built with React Native (Expo) and Supabase. Vi
 ### 1. Clone and install
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/mm-xo/Nitrogen.git
 cd Nitrogen/frontend
 npm install
 ```
