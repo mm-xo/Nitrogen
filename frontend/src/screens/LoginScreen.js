@@ -18,17 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import { AuthBackground } from "../components/AuthBackground";
-
-const COLORS = {
-  bg: "#0f172a",
-  surface: "#1e293b",
-  inputBg: "rgba(30, 41, 59, 0.8)",
-  border: "rgba(148, 163, 184, 0.2)",
-  text: "#f8fafc",
-  muted: "#94a3b8",
-  accent: "#ec4899",
-  divider: "rgba(148, 163, 184, 0.3)",
-};
+import { DARK_COLORS } from "../themes/colors";
 
 export function LoginScreen() {
   const { signIn } = useAuth();
@@ -92,7 +82,7 @@ export function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor={COLORS.muted}
+              placeholderTextColor={DARK_COLORS.muted}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -105,7 +95,7 @@ export function LoginScreen() {
               <TextInput
                 style={[styles.input, styles.passwordInput]}
                 placeholder="Password"
-                placeholderTextColor={COLORS.muted}
+                placeholderTextColor={DARK_COLORS.muted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -120,7 +110,7 @@ export function LoginScreen() {
                 <MaterialCommunityIcons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={22}
-                  color={COLORS.muted}
+                  color={DARK_COLORS.muted}
                 />
               </TouchableOpacity>
             </View>
@@ -173,7 +163,7 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: DARK_COLORS.bg,
   },
   flex: {
     flex: 1,
@@ -191,41 +181,41 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 32,
     fontWeight: "800",
-    color: COLORS.text,
+    color: DARK_COLORS.text,
     letterSpacing: -0.5,
     marginBottom: 8,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.text,
+    color: DARK_COLORS.text,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 15,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
   },
   form: {
     marginBottom: 24,
   },
   input: {
-    backgroundColor: COLORS.inputBg,
+    backgroundColor: DARK_COLORS.inputBg,
     borderRadius: 8,
     paddingVertical: 16,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: COLORS.text,
+    color: DARK_COLORS.text,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: DARK_COLORS.border,
   },
   passwordRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.inputBg,
+    backgroundColor: DARK_COLORS.inputBg,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: DARK_COLORS.border,
     marginBottom: 12,
   },
   passwordInput: {
@@ -243,11 +233,11 @@ const styles = StyleSheet.create({
   },
   forgot: {
     fontSize: 14,
-    color: COLORS.accent,
+    color: DARK_COLORS.accent,
     fontWeight: "500",
   },
   cta: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: DARK_COLORS.accent,
     borderRadius: 8,
     paddingVertical: 16,
     alignItems: "center",
@@ -269,11 +259,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.divider,
+    backgroundColor: DARK_COLORS.divider,
   },
   dividerText: {
     fontSize: 13,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
     marginHorizontal: 16,
   },
   linkWrap: {
@@ -282,10 +272,10 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 15,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
   },
   linkAccent: {
-    color: COLORS.accent,
+    color: DARK_COLORS.accent,
     fontWeight: "600",
   },
 });

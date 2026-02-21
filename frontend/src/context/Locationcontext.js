@@ -1,11 +1,18 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { distanceFromCurrentTo } from '../location/Distance';
 
 const LocationContext = createContext(null);
 
 export function LocationProvider({ children }) {
   const [coordinates, setCoordinates] = useState(null);
+  const [locationError, setLocationError] = useState(null);
   const [targetRegion, setTargetRegion] = useState(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
+
+  const requestLocationRetry = useCallback(() => {
+    setLocationError(null);
+    setRetryTrigger((n) => n + 1);
+  }, []);
 
   // Recalculate distance every time coordinates update (each Expo Location callback)
   const distanceToTarget = useMemo(
@@ -17,11 +24,15 @@ export function LocationProvider({ children }) {
     () => ({
       coordinates,
       setCoordinates,
+      locationError,
+      setLocationError,
+      requestLocationRetry,
+      retryTrigger,
       targetRegion,
       setTargetRegion,
       distanceToTarget: targetRegion ? distanceToTarget : null,
     }),
-    [coordinates, targetRegion, distanceToTarget]
+    [coordinates, locationError, requestLocationRetry, retryTrigger, targetRegion, distanceToTarget]
   );
 
   return (

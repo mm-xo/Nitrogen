@@ -17,17 +17,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../../lib/supabase";
 import { AuthBackground } from "../components/AuthBackground";
-
-const COLORS = {
-  bg: "#0f172a",
-  inputBg: "rgba(30, 41, 59, 0.8)",
-  border: "rgba(148, 163, 184, 0.2)",
-  text: "#f8fafc",
-  muted: "#94a3b8",
-  accent: "#ec4899",
-  error: "#ef4444",
-  divider: "rgba(148, 163, 184, 0.3)",
-};
+import { DARK_COLORS } from "../themes/colors";
 
 function getAuthErrorMessage(error) {
   const msg = error?.message || "";
@@ -146,7 +136,7 @@ export function SignupScreen() {
               <TextInput
                 style={[styles.input, styles.halfInput, !!errors.first_name && styles.inputError]}
                 placeholder="First name"
-                placeholderTextColor={COLORS.muted}
+                placeholderTextColor={DARK_COLORS.muted}
                 value={first_name}
                 onChangeText={(v) => {
                   setFirstName(v);
@@ -158,7 +148,7 @@ export function SignupScreen() {
               <TextInput
                 style={[styles.input, styles.halfInput, !!errors.last_name && styles.inputError]}
                 placeholder="Last name"
-                placeholderTextColor={COLORS.muted}
+                placeholderTextColor={DARK_COLORS.muted}
                 value={last_name}
                 onChangeText={(v) => {
                   setLastName(v);
@@ -173,7 +163,7 @@ export function SignupScreen() {
             <TextInput
               style={inputStyle(!!errors.student_email)}
               placeholder="Student email (@myumanitoba.ca)"
-              placeholderTextColor={COLORS.muted}
+              placeholderTextColor={DARK_COLORS.muted}
               value={student_email}
               onChangeText={(v) => {
                 setStudentEmail(v);
@@ -208,7 +198,7 @@ export function SignupScreen() {
               <TextInput
                 style={[styles.input, styles.passwordInput]}
                 placeholder="Password"
-                placeholderTextColor={COLORS.muted}
+                placeholderTextColor={DARK_COLORS.muted}
                 value={password}
                 onChangeText={(v) => {
                   setPassword(v);
@@ -231,7 +221,7 @@ export function SignupScreen() {
                 <MaterialCommunityIcons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={22}
-                  color={COLORS.muted}
+                  color={DARK_COLORS.muted}
                 />
               </TouchableOpacity>
             </View>
@@ -240,7 +230,7 @@ export function SignupScreen() {
             <TextInput
               style={inputStyle(!!errors.confirmPassword)}
               placeholder="Confirm password"
-              placeholderTextColor={COLORS.muted}
+              placeholderTextColor={DARK_COLORS.muted}
               value={confirmPassword}
               onChangeText={(v) => {
                 setConfirmPassword(v);
@@ -295,7 +285,7 @@ export function SignupScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: DARK_COLORS.bg,
   },
   flex: {
     flex: 1,
@@ -313,19 +303,19 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 32,
     fontWeight: "800",
-    color: COLORS.text,
+    color: DARK_COLORS.text,
     letterSpacing: -0.5,
     marginBottom: 8,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.text,
+    color: DARK_COLORS.text,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 15,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
   },
   form: {
     marginBottom: 24,
@@ -338,26 +328,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   input: {
-    backgroundColor: COLORS.inputBg,
+    backgroundColor: DARK_COLORS.inputBg,
     borderRadius: 8,
     paddingVertical: 16,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: COLORS.text,
+    color: DARK_COLORS.text,
     marginBottom: 4,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: DARK_COLORS.border,
   },
   inputError: {
-    borderColor: COLORS.error,
+    borderColor: DARK_COLORS.error,
   },
   passwordRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.inputBg,
+    backgroundColor: DARK_COLORS.inputBg,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: DARK_COLORS.border,
     marginBottom: 4,
   },
   passwordInput: {
@@ -370,7 +360,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
     marginBottom: 8,
   },
   segmentedRow: {
@@ -383,30 +373,30 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.inputBg,
+    borderColor: DARK_COLORS.border,
+    backgroundColor: DARK_COLORS.inputBg,
     alignItems: "center",
   },
   segmentedBtnActive: {
-    borderColor: COLORS.accent,
+    borderColor: DARK_COLORS.accent,
     backgroundColor: "rgba(236, 72, 153, 0.15)",
   },
   segmentedText: {
     fontSize: 16,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
   },
   segmentedTextActive: {
-    color: COLORS.accent,
+    color: DARK_COLORS.accent,
     fontWeight: "600",
   },
   fieldError: {
     fontSize: 12,
-    color: COLORS.error,
+    color: DARK_COLORS.error,
     marginBottom: 12,
     marginLeft: 2,
   },
   cta: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: DARK_COLORS.accent,
     borderRadius: 8,
     paddingVertical: 16,
     alignItems: "center",
@@ -429,11 +419,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.divider,
+    backgroundColor: DARK_COLORS.divider,
   },
   dividerText: {
     fontSize: 13,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
     marginHorizontal: 16,
   },
   linkWrap: {
@@ -442,10 +432,10 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 15,
-    color: COLORS.muted,
+    color: DARK_COLORS.muted,
   },
   linkAccent: {
-    color: COLORS.accent,
+    color: DARK_COLORS.accent,
     fontWeight: "600",
   },
 });
