@@ -30,8 +30,12 @@ import { DARK_COLORS } from "../themes/colors";
 
 const DB_CATEGORY_MAP = {
   safety: "Safety",
-  food: "FreeFood",
-  events: "Event",
+  food: "Food",
+  social: "Social",
+  academic: "Academic",
+  sports: "Sports",
+  lostfound: "LostFound",
+  events: "Events",
 };
 
 const TITLE_MIN = 3;
@@ -82,8 +86,12 @@ export function CreateAlertScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const CATEGORY_OPTIONS = [
+    { value: "food", label: "Food", icon: "food" },
     { value: "safety", label: "Safety", icon: "alert-circle" },
-    { value: "food", label: "Free Food", icon: "food" },
+    { value: "social", label: "Social", icon: "account-group" },
+    { value: "academic", label: "Academic", icon: "school" },
+    { value: "sports", label: "Sports", icon: "trophy" },
+    { value: "lostfound", label: "Lost & Found", icon: "magnify" },
     { value: "events", label: "Events", icon: "bullhorn" },
   ];
 
