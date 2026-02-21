@@ -1,5 +1,5 @@
 import React from 'react';
-import MapView from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 
 const DEFAULT_DELTA = 0.005;
@@ -28,7 +28,7 @@ export default function LocationMapView({ coordinates }) {
         initialRegion={region}
         showsUserLocation
       >
-        <MapView.Marker
+        <Marker
           coordinate={{
             latitude: coordinates.lat,
             longitude: coordinates.lng,
