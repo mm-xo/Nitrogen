@@ -4,6 +4,8 @@ import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { getAlertCoordinates } from "./AlterPins";
 import { CATEGORY_COLORS } from "../constants/categories";
 import { supabase } from "../../lib/supabase";
+import { useNavigation } from "@react-navigation/native";
+
 
 const DEFAULT_DELTA = 0.005;
 const UNI_LAT = 49.806957;
@@ -16,6 +18,9 @@ function filterValidPins(rows) {
 }
 
 export default function LocationMapView({ coordinates, refreshTrigger = 0 }) {
+
+    const navigation = useNavigation();  // ← add
+
   const [alerts, setAlerts] = React.useState([]);
   const [loadingAlerts, setLoadingAlerts] = React.useState(true);
   const [alertsError, setAlertsError] = React.useState(null);
@@ -95,6 +100,9 @@ export default function LocationMapView({ coordinates, refreshTrigger = 0 }) {
                 latitude: a.latitude,
                 longitude: a.longitude,
               }}
+              onPress={() =>
+              navigation.navigate("Alerts", { highlightId: a.id })  // ← add
+            }
             >
               <View
                 style={[
