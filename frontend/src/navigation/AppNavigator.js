@@ -4,8 +4,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import { LoginScreen } from "../screens/LoginScreen";
 import { MapScreen } from "../screens/MapScreen";
-import { CreateAlertScreen } from "../screens/CreateAlertScreen";
+import { Alerts } from "../screens/Alerts";
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { CreateAlertScreen } from "../screens/CreateAlertScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -14,7 +15,7 @@ function MainTabs() {
     return (
         <Tabs.Navigator>
             <Tabs.Screen name="Map" component={MapScreen} />
-            <Tabs.Screen name="CreateAlert" component={CreateAlertScreen} />
+            <Tabs.Screen name="Alerts" component={Alerts} />
             <Tabs.Screen name="Settings" component={SettingsScreen} />
         </Tabs.Navigator>
     );
@@ -29,7 +30,10 @@ export function AppNavigator() {
                 {() => <LoginScreen onLogin={() => setIsLoggedIn(true)}/>}
             </Stack.Screen>
         ) : (
+            <>
                 <Stack.Screen name="MainTabs" component={MainTabs} />
+                <Stack.Screen name="CreateAlert" component={CreateAlertScreen} />
+            </>
     )}
     </Stack.Navigator>
     );
