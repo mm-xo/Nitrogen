@@ -1,4 +1,5 @@
 import { useLocation } from '../context/Locationcontext';
+import { CAMPUS_CENTER, CAMPUS_RADIUS_M } from '../constants/campus';
 
 /**
  * Haversine formula: great-circle distance between two points on Earth.
@@ -47,3 +48,16 @@ export function useDistanceTo(target, unit = 'm') {
   const { coordinates } = useLocation();
   return distanceFromCurrentTo(coordinates, target, unit);
 }
+
+/**
+ * Check if a point is within the campus circle (for create-alert validation).
+ * @param {{ lat: number, lng: number } | null} current
+ * @returns {{ within: boolean, distanceM: number | null }}
+ */
+export function isWithinCampus(current) {
+  const distanceM = distanceFromCurrentTo(current, CAMPUS_CENTER, 'm');
+  if (distanceM == null) return { within: false, distanceM: null };
+  return { within: distanceM <= CAMPUS_RADIUS_M, distanceM };
+}
+
+export { CAMPUS_CENTER, CAMPUS_RADIUS_M };

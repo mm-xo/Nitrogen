@@ -1,10 +1,9 @@
 import * as Location from 'expo-location';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from '../context/Locationcontext';
 
 export default function ExpoLocation() {
-  const { setCoordinates } = useLocation();
-  const [errorMsg, setErrorMsg] = useState(null);
+  const { setCoordinates, setLocationError, retryTrigger } = useLocation();
 
   useEffect(() => {
     let subscription = null;
@@ -12,15 +11,16 @@ export default function ExpoLocation() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
+        setLocationError('Permission to access location was denied');
         return;
       }
+      setLocationError(null);
 
       subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 2000,   // update at most every 2 seconds
-          distanceInterval: 5,  // or when user moves 5 meters
+          timeInterval: 2000,
+          distanceInterval: 5,
         },
         ({ coords }) => {
           setCoordinates({
@@ -36,7 +36,7 @@ export default function ExpoLocation() {
         subscription.remove();
       }
     };
-  }, [setCoordinates]);
+  }, [setCoordinates, setLocationError, retryTrigger]);
 
   return null;
 }
