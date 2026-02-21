@@ -25,7 +25,6 @@ import { useLocation } from "../context/Locationcontext";
 import { supabase } from "../../lib/supabase";
 import { isWithinCampus, CAMPUS_CENTER } from "../location/Distance";
 import { withTimeout } from "../utils/promiseUtils";
-import { CATEGORY_ICONS } from "../constants/icons";
 import { DARK_COLORS } from "../themes/colors";
 
 const DB_CATEGORY_MAP = {
@@ -336,7 +335,7 @@ export function CreateAlertScreen() {
 
           <View style={styles.row}>
             <MaterialCommunityIcons
-              name={CATEGORY_ICONS[category]}
+              name={CATEGORY_OPTIONS.find((o) => o.value === category)?.icon ?? "bell-outline"}
               size={20}
               color={DARK_COLORS.accent}
             />
@@ -349,7 +348,7 @@ export function CreateAlertScreen() {
           >
             <View style={styles.pickerInner}>
               <MaterialCommunityIcons
-                name={CATEGORY_ICONS[category]}
+                name={CATEGORY_OPTIONS.find((o) => o.value === category)?.icon ?? "bell-outline"}
                 size={20}
                 color={DARK_COLORS.accent}
               />
