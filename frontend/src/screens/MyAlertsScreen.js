@@ -16,7 +16,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { COLORS } from "../themes/colors";
 import { SPACING, RADIUS } from "../themes/layout";
-import { getMyAlerts } from "../map/AlterPins";
+import { getMyAlerts, deleteAlert } from "../map/AlterPins";
 import { AuthBackground } from "../components/AuthBackground";
 import { CATEGORY_LABELS, CATEGORY_ICONS } from "../constants/categories";
 import { useAuth } from "../context/AuthContext";
@@ -35,7 +35,7 @@ function formatDate(iso) {
     return `${diffDays}d ago`;
 }
 
-function AlertRow({ item }) {
+function AlertRow({ item, onDelete }) {
     const label = CATEGORY_LABELS[item.category] ?? item.category;
     const icon = CATEGORY_ICONS[item.category] ?? "bell-outline";
 
@@ -64,6 +64,17 @@ function AlertRow({ item }) {
                     <Text style={styles.rowTime}>{formatDate(item.created_at)}</Text>
                 </View>
             </View>
+            <TouchableOpacity
+                onPress={() => onDelete?.(item.id)}
+                style={styles.deleteBtn}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+                <MaterialCommunityIcons
+                    name="delete-outline"
+                    size={24}
+                    color={COLORS.danger}
+                />
+            </TouchableOpacity>
         </View>
     );
 }
@@ -90,6 +101,15 @@ export function MyAlertsScreen() {
             setRefreshing(false);
         }
     }, [session?.user?.id]);
+
+    const handleDelete = useCallback(async (alertId) => {
+        try {
+            await deleteAlert(alertId);
+            setAlerts((prev) => prev.filter((a) => a.id !== alertId));
+        } catch (e) {
+            setError(e?.message ?? "Could not delete alert.");
+        }
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
@@ -147,7 +167,7 @@ export function MyAlertsScreen() {
                 <FlatList
                     data={alerts}
                     keyExtractor={(a) => a.id}
-                    renderItem={({ item }) => <AlertRow item={item} />}
+                    renderItem={({ item }) => <AlertRow item={item} onDelete={handleDelete} />}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
                         <RefreshControl
@@ -240,6 +260,10 @@ const styles = StyleSheet.create({
     rowTime: {
         fontSize: 12,
         color: COLORS.textSecondary,
+    },
+    deleteBtn: {
+        justifyContent: "center",
+        paddingLeft: SPACING.sm,
     },
     emptyIconWrap: {
         width: 72,

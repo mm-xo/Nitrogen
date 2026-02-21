@@ -36,3 +36,10 @@ export async function getMyAlerts(userId) {
 
   return data ?? [];
 }
+
+/** Delete an alert by id (for My Alerts tab). */
+export async function deleteAlert(alertId) {
+  const { error } = await supabase.from("alerts").delete().eq("id", alertId);
+
+  if (error) throw error;
+}
