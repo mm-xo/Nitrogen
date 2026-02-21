@@ -1,11 +1,9 @@
 import * as React from "react";
 import { View, StyleSheet } from "react-native";
-
-const COLORS = {
-  bg: "#0f172a",
-  orbPink: "rgba(236, 72, 153, 0.15)",
-  orbPurple: "rgba(139, 92, 246, 0.12)",
-  orbBlue: "rgba(59, 130, 246, 0.08)",
+// Subtle dark purple/blur blobs to match Create account screen
+const ORB_COLORS = {
+  orbDarkPurple: "rgba(60, 55, 90, 0.5)",
+  orbPurple: "rgba(80, 70, 120, 0.35)",
 };
 
 export function AuthBackground() {
@@ -27,28 +25,28 @@ const styles = StyleSheet.create({
   orb1: {
     width: 280,
     height: 280,
-    backgroundColor: COLORS.orbPink,
+    backgroundColor: ORB_COLORS.orbDarkPurple,
     top: -80,
     right: -100,
   },
   orb2: {
     width: 200,
     height: 200,
-    backgroundColor: COLORS.orbPurple,
+    backgroundColor: ORB_COLORS.orbPurple,
     top: "40%",
     left: -80,
   },
   orb3: {
     width: 160,
     height: 160,
-    backgroundColor: COLORS.orbBlue,
+    backgroundColor: ORB_COLORS.orbDarkPurple,
     bottom: "20%",
     right: -40,
   },
   orb4: {
     width: 120,
     height: 120,
-    backgroundColor: COLORS.orbPurple,
+    backgroundColor: ORB_COLORS.orbPurple,
     bottom: -30,
     left: "30%",
   },
