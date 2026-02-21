@@ -27,7 +27,7 @@ function MainTabs() {
                 tabBarInactiveTintColor: COLORS.textSecondary,
                 tabBarStyle: {
                     backgroundColor: COLORS.card,
-                    borderTopColor: "#E5E7EB",
+                    borderTopColor: COLORS.border,
                     borderTopWidth: 1,
                     paddingTop: SPACING.sm,
                     height: 120,
@@ -134,9 +134,9 @@ export function AppNavigator() {
                             headerShown: true,
                             title: "Create Alert",
                             headerStyle: {
-                                backgroundColor: COLORS.primary,
+                                backgroundColor: COLORS.card,
                             },
-                            headerTintColor: "#FFF",
+                            headerTintColor: COLORS.primary,
                             headerTitleStyle: {
                                 fontSize: 18,
                                 fontWeight: "600",
