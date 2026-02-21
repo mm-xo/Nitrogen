@@ -9,11 +9,9 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
-    // Get initial session (restores from persisted storage)
     supabase.auth.getSession()
       .then(async ({ data: { session }, error }) => {
         if (error) {
-          // 500, network error, etc. – show login screen
           console.warn('Auth init failed:', error?.message || error);
           setSession(null);
         } else {
@@ -54,7 +52,6 @@ export function AuthProvider({ children }) {
         .single();
 
       if (error) {
-        // Profile may not exist yet; create one or use minimal fallback
         setProfile({ id: userId });
         return;
       }

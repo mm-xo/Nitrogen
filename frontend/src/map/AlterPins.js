@@ -10,7 +10,6 @@ export async function getAlertCoordinates() {
   return data;
 }
 
-/** Fetch full alert rows for the Alerts tab (no map). */
 export async function getAlerts() {
   const { data, error } = await supabase
     .from("alerts")
@@ -22,7 +21,6 @@ export async function getAlerts() {
   return data ?? [];
 }
 
-/** Fetch alerts created by the given user (for My Alerts tab). */
 export async function getMyAlerts(userId) {
   if (!userId) return [];
 
@@ -37,7 +35,6 @@ export async function getMyAlerts(userId) {
   return data ?? [];
 }
 
-/** Delete an alert by id (for My Alerts tab). */
 export async function deleteAlert(alertId) {
   const { error } = await supabase.from("alerts").delete().eq("id", alertId);
 

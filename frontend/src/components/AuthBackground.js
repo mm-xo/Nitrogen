@@ -1,6 +1,6 @@
 import * as React from "react";
 import { View, StyleSheet } from "react-native";
-// Subtle dark purple/blur blobs to match Create account screen
+
 const ORB_COLORS = {
   orbDarkPurple: "rgba(60, 55, 90, 0.5)",
   orbPurple: "rgba(80, 70, 120, 0.35)",

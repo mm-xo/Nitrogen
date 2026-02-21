@@ -1,6 +1,3 @@
-/**
- * Wrap a promise with a timeout.
- */
 export function withTimeout(promise, ms, msg = "Request timed out") {
   return Promise.race([
     promise,

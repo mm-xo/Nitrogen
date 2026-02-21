@@ -77,6 +77,10 @@ Then:
 
 Restart the dev server after changing `.env`.
 
+## Code style
+
+Source files are kept free of inline and block comments.
+
 ## Project structure
 
 ```

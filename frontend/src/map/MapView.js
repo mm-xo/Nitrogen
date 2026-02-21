@@ -19,7 +19,7 @@ function filterValidPins(rows) {
 
 export default function LocationMapView({ coordinates, refreshTrigger = 0 }) {
 
-    const navigation = useNavigation();  // ← add
+    const navigation = useNavigation();
 
   const [alerts, setAlerts] = React.useState([]);
   const [loadingAlerts, setLoadingAlerts] = React.useState(true);
@@ -101,7 +101,7 @@ export default function LocationMapView({ coordinates, refreshTrigger = 0 }) {
                 longitude: a.longitude,
               }}
               onPress={() =>
-              navigation.navigate("Alerts", { highlightId: a.id })  // ← add
+              navigation.navigate("Alerts", { highlightId: a.id })
             }
             >
               <View
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
   alignItems: "center",
   justifyContent: "center",
 
-  // optional shadow
   elevation: 5,
   shadowColor: "#000",
   shadowOpacity: 0.25,

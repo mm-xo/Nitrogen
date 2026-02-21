@@ -63,7 +63,7 @@ function formatExpiresAt(date) {
 
 function getDurationHours(expiresAt) {
   const hours = Math.max(1, Math.round((expiresAt - Date.now()) / (1000 * 60 * 60)));
-  return Math.min(hours, 32767); // smallint max
+  return Math.min(hours, 32767);
 }
 
 export function CreateAlertScreen() {
@@ -210,7 +210,6 @@ export function CreateAlertScreen() {
     setLocationDebug(null);
 
     try {
-      // Circle check: must be within campus radius (uses Distance.js)
       if (!useTestLocation) {
         const { within, distanceM } = isWithinCampus(coordinates);
         if (!within) {

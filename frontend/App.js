@@ -10,7 +10,6 @@ SplashScreen.preventAutoHideAsync();
 import { StyleSheet, Text, View, Button } from 'react-native';
 import { COLORS } from "./src/themes/colors";
 import { SPACING } from "./src/themes/layout";
-// import { useRouter } from "expo-router";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 
 import ExpoLocation from "./src/location/Expo-Location";

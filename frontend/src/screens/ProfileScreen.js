@@ -74,7 +74,6 @@ export function ProfileScreen() {
         return;
       }
       if (!data) {
-        // Profile may not exist (e.g. user created before trigger) – show form with email from auth
         setStudentEmail(session?.user?.email ?? "");
         setAccountType("student");
         setFirstName("");
@@ -138,7 +137,6 @@ export function ProfileScreen() {
     setSaving(true);
     setErrors({});
 
-    // Email is read-only; use existing value, never from user input
     const payload = {
       id: userId,
       first_name: first_name.trim(),
@@ -215,7 +213,6 @@ export function ProfileScreen() {
     );
   }
 
-  // Default view: basic info only
   if (!isEditing) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -265,7 +262,6 @@ export function ProfileScreen() {
     );
   }
 
-  // Edit view: full form
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <AuthBackground />

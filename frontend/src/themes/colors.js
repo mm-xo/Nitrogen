@@ -1,4 +1,3 @@
-// Main app theme — dark, matches Create account / auth UI
 export const COLORS = {
   primary: "#E92E8C",
   danger: "#DC2626",
@@ -11,7 +10,6 @@ export const COLORS = {
   border: "rgba(148, 163, 184, 0.2)",
 };
 
-// Dark theme (login, signup, create-alert) — matches Create account UI
 export const DARK_COLORS = {
   bg: "#1E1F30",
   card: "#252637",

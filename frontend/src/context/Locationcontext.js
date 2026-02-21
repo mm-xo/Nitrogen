@@ -14,7 +14,6 @@ export function LocationProvider({ children }) {
     setRetryTrigger((n) => n + 1);
   }, []);
 
-  // Recalculate distance every time coordinates update (each Expo Location callback)
   const distanceToTarget = useMemo(
     () => distanceFromCurrentTo(coordinates, targetRegion ?? {}, 'm'),
     [coordinates, targetRegion]

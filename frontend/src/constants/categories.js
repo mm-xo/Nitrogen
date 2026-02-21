@@ -1,8 +1,3 @@
-/**
- * Alert categories matching DB constraint alerts_category_check:
- * Food, Safety, Social, Academic, Sports, LostFound, Events
- */
-
 export const CATEGORY_LIST = [
   { value: "food", db: "Food", label: "Food", icon: "food" },
   { value: "safety", db: "Safety", label: "Safety", icon: "alert-circle" },
@@ -13,33 +8,28 @@ export const CATEGORY_LIST = [
   { value: "events", db: "Events", label: "Events", icon: "bullhorn" },
 ];
 
-/** Form value (lowercase) -> DB value */
 export const DB_CATEGORY_MAP = Object.fromEntries(
   CATEGORY_LIST.map((c) => [c.value, c.db])
 );
 
-/** DB value -> display label */
 export const CATEGORY_LABELS = Object.fromEntries(
   CATEGORY_LIST.map((c) => [c.db, c.label])
 );
 
-/** DB value -> MaterialCommunityIcons name */
 export const CATEGORY_ICONS = Object.fromEntries(
   CATEGORY_LIST.map((c) => [c.db, c.icon])
 );
 
-/** Lowercase category key -> hex color for map pins */
 export const CATEGORY_COLORS = {
-  food: "#FF9500",       // orange
-  safety: "#FF3B30",     // red
-  social: "#5856D6",     // purple
-  academic: "#007AFF",    // blue
-  sports: "#34C759",     // green
-  lostfound: "#AF52DE",  // violet
-  events: "#00C7BE",     // teal
+  food: "#FF9500",
+  safety: "#FF3B30",
+  social: "#5856D6",
+  academic: "#007AFF",
+  sports: "#34C759",
+  lostfound: "#AF52DE",
+  events: "#00C7BE",
 };
 
-/** For CreateAlertScreen picker: { value, label, icon } */
 export const CATEGORY_OPTIONS = CATEGORY_LIST.map(({ value, label, icon }) => ({
   value,
   label,

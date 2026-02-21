@@ -7,10 +7,6 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-/**
- * Custom storage adapter: uses SecureStore on native (iOS/Android) when available,
- * falls back to AsyncStorage on web or when SecureStore fails.
- */
 const createSecureStorageAdapter = () => {
   let useSecureStore = Platform.OS === 'ios' || Platform.OS === 'android';
 
@@ -64,7 +60,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Refresh session when app comes to foreground
 if (Platform.OS !== 'web') {
   AppState.addEventListener('change', (state) => {
     if (state === 'active') {

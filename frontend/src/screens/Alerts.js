@@ -52,7 +52,7 @@ function AlertRow({ item, highlighted  }) {
     };
 
     return (
-       <TouchableOpacity                                  // ← was View
+       <TouchableOpacity
             onPress={handleShare}
             activeOpacity={0.75}
              style={
@@ -87,15 +87,15 @@ function AlertRow({ item, highlighted  }) {
 
 export function Alerts() {
     const navigation = useNavigation();
-const route = useRoute();                              // ← add
-    const highlightId = route.params?.highlightId ?? null; // ← add
+const route = useRoute();
+    const highlightId = route.params?.highlightId ?? null;
 
 
     const [alerts, setAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
-    const flatListRef = React.useRef(null);               // ← add
+    const flatListRef = React.useRef(null);
 
     const loadAlerts = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
@@ -121,7 +121,6 @@ React.useEffect(() => {
         if (!highlightId || alerts.length === 0) return;
         const index = alerts.findIndex((a) => a.id === highlightId);
         if (index === -1) return;
-        // Small delay to let the list render first
         setTimeout(() => {
             flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
         }, 300);
@@ -182,7 +181,7 @@ React.useEffect(() => {
                     renderItem={({ item }) => (<AlertRow item={item}
                     highlighted={item.id === highlightId} />)}
 
-                    onScrollToIndexFailed={(info) => {         // ← add: prevents crash
+                    onScrollToIndexFailed={(info) => {
                     setTimeout(() => {
                         flatListRef.current?.scrollToIndex({
                             index: info.index,
@@ -346,6 +345,6 @@ const styles = StyleSheet.create({
     rowHighlighted: {
     borderWidth: 2,
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.card,  // or a tinted version if you prefer
+    backgroundColor: COLORS.card,
 },
 });
