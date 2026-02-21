@@ -33,8 +33,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: SPACING.md,
   },
-   
-
 });
 
 
