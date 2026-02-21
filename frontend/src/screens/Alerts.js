@@ -19,7 +19,7 @@ import { COLORS } from "../themes/colors";
 import { SPACING, RADIUS } from "../themes/layout";
 import { getAlerts } from "../map/AlterPins";
 import { AuthBackground } from "../components/AuthBackground";
-import { CATEGORY_LABELS, CATEGORY_ICONS } from "../constants/categories";
+import { CATEGORY_LABELS, CATEGORY_ICONS, CATEGORY_COLORS } from "../constants/categories";
 
 function formatDate(iso) {
     if (!iso) return "";
@@ -38,6 +38,7 @@ function formatDate(iso) {
 function AlertRow({ item, highlighted  }) {
     const label = CATEGORY_LABELS[item.category] ?? item.category;
     const icon = CATEGORY_ICONS[item.category] ?? "bell-outline";
+    const iconColor = CATEGORY_COLORS[(item.category || "").toLowerCase()] ?? "#999";
 
      const handleShare = async () => {
         try {
@@ -64,7 +65,7 @@ function AlertRow({ item, highlighted  }) {
                     <MaterialCommunityIcons
                         name={icon}
                         size={24}
-                        color={COLORS.textSecondary}
+                        color={iconColor}
                     />
                 </View>
             )}
