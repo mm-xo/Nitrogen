@@ -104,11 +104,3 @@ Nitrogen/
 └── README.md
 ```
 
-## Troubleshooting
-
-- **"supabaseUrl is required"** – Ensure `frontend/.env` exists with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`, then restart Expo (`npx expo start`).
-- **"Network request failed"** – Check device/simulator internet; ensure your Supabase project is not paused (Dashboard → Restore if needed); verify you're using the **anon** public key from **Settings → API**.
-
-## License
-
-Private / hackathon project – see repo or your team for terms.
