@@ -121,9 +121,10 @@ export const CampusMap = React.forwardRef(function CampusMap(
 });
 
 const styles = StyleSheet.create({
+  // No shadows here: markers are rasterised, and a shadow leaves a visible box behind the pin on Android.
   pinBox: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -133,7 +134,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2.5,
     borderColor: "#fff",
-    boxShadow: "0px 1px 4px rgba(0,0,0,0.3)",
   },
   pinSelected: {
     width: 34,
@@ -143,6 +143,5 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "0px 3px 10px rgba(0,0,0,0.3)",
   },
 });

@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 
-// Floating chrome is frosted on web (backdrop-filter); native has no backdrop blur, so it stays near-opaque.
-const glass = (rgb) => `rgba(${rgb}, ${Platform.OS === "web" ? 0.72 : 0.97})`;
+// Floating chrome is frosted on web (backdrop-filter); native has no backdrop blur, so it stays opaque.
+const glass = (rgb) => `rgba(${rgb}, ${Platform.OS === "web" ? 0.72 : 1})`;
 
 export const glassBlur = Platform.OS === "web" ? { backdropFilter: "saturate(180%) blur(20px)" } : null;
 
