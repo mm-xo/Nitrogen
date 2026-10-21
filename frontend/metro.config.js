@@ -1,11 +1,9 @@
 const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require("nativewind/metro");
 
-let config = getDefaultConfig(__dirname);
+const config = getDefaultConfig(__dirname);
 
-config = withNativeWind(config, { input: "./global.css" });
-
+// supabase realtime-js ships an ESM entry Metro can't resolve; point it at the CJS build.
 const supabaseRealtimePath = path.dirname(
   require.resolve("@supabase/realtime-js/package.json")
 );
