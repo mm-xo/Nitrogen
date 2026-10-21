@@ -1,327 +1,234 @@
 import * as React from "react";
-import { useState, useCallback } from "react";
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    FlatList,
-    ActivityIndicator,
-    RefreshControl,
-    Image,
-    StyleSheet,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { RefreshControl, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import Animated, {
+  FadeInDown,
+  FadeOut,
+  interpolate,
+  LinearTransition,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 
-import { COLORS } from "../themes/colors";
-import { SPACING, RADIUS } from "../themes/layout";
-import { getMyAlerts, deleteAlert } from "../map/AlterPins";
-import { AuthBackground } from "../components/AuthBackground";
-import { CATEGORY_LABELS, CATEGORY_ICONS } from "../constants/categories";
 import { useAuth } from "../context/AuthContext";
+import { useLocation } from "../context/LocationContext";
+import { useAlerts } from "../hooks/useAlerts";
+import { makeStyles, radius, space, useTheme } from "../theme";
+import {
+  AlertCardSkeleton,
+  Button,
+  EmptyState,
+  Icon,
+  LargeHeader,
+  PressableScale,
+  Screen,
+  SegmentedControl,
+  Text,
+  useToast,
+} from "../ui";
+import { AlertCard } from "../components/AlertCard";
+import { useTabBarSpace } from "../navigation/TabBar";
+import { confirm } from "../utils/dialogs";
+import { isExpired } from "../utils/format";
+import { haptics } from "../utils/haptics";
 
-function formatDate(iso) {
-    if (!iso) return "";
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now - d;
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
-}
+const ACTION_WIDTH = 84;
 
-function AlertRow({ item, onDelete }) {
-    const label = CATEGORY_LABELS[item.category] ?? item.category;
-    const icon = CATEGORY_ICONS[item.category] ?? "bell-outline";
-
-    return (
-        <View style={styles.row}>
-            {item.photo_url ? (
-                <Image source={{ uri: item.photo_url }} style={styles.thumb} />
-            ) : (
-                <View style={styles.thumbPlaceholder}>
-                    <MaterialCommunityIcons
-                        name={icon}
-                        size={24}
-                        color={COLORS.textSecondary}
-                    />
-                </View>
-            )}
-            <View style={styles.rowContent}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                    {item.title}
-                </Text>
-                <Text style={styles.rowMessage} numberOfLines={2}>
-                    {item.message}
-                </Text>
-                <View style={styles.rowMeta}>
-                    <Text style={styles.rowCategory}>{label}</Text>
-                    <Text style={styles.rowTime}>{formatDate(item.created_at)}</Text>
-                </View>
-            </View>
-            <TouchableOpacity
-                onPress={() => onDelete?.(item.id)}
-                style={styles.deleteBtn}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-                <MaterialCommunityIcons
-                    name="delete-outline"
-                    size={24}
-                    color={COLORS.danger}
-                />
-            </TouchableOpacity>
-        </View>
-    );
+function DeleteAction({ drag, onPress }) {
+  const s = useStyles();
+  const style = useAnimatedStyle(() => ({
+    opacity: interpolate(-drag.value, [0, ACTION_WIDTH * 0.6], [0, 1], "clamp"),
+    transform: [{ scale: interpolate(-drag.value, [0, ACTION_WIDTH], [0.6, 1], "clamp") }],
+  }));
+  return (
+    <View style={s.actionSlot}>
+      <Animated.View style={style}>
+        <PressableScale onPress={onPress} style={s.action} accessibilityRole="button" accessibilityLabel="Delete alert">
+          <Icon name="trash-2" size={20} color="danger" />
+          <Text variant="caption" color="danger">
+            Delete
+          </Text>
+        </PressableScale>
+      </Animated.View>
+    </View>
+  );
 }
 
 export function MyAlertsScreen() {
-    const { session } = useAuth();
-    const navigation = useNavigation();
-    const [alerts, setAlerts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState(null);
+  const s = useStyles();
+  const navigation = useNavigation();
+  const toast = useToast();
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  const { distanceTo } = useLocation();
+  const { alerts, status, error, refreshing, refresh, retry, remove, now } = useAlerts({ userId: user?.id });
+  const bottomSpace = useTabBarSpace();
+  const [tab, setTab] = React.useState("live");
+  // A drag that ends over the card would otherwise also count as a tap (notably on web).
+  const lastSwipe = React.useRef(0);
+  const markSwipe = () => {
+    lastSwipe.current = Date.now();
+  };
 
-    const loadAlerts = useCallback(async (isRefresh = false) => {
-        if (isRefresh) setRefreshing(true);
-        else setLoading(true);
-        setError(null);
-        try {
-            const data = await getMyAlerts(session?.user?.id);
-            setAlerts(data ?? []);
-        } catch (e) {
-            setError(e?.message ?? "Could not load your alerts.");
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [session?.user?.id]);
+  const live = alerts.filter((a) => !isExpired(a, now));
+  const ended = alerts.filter((a) => isExpired(a, now));
+  const data = tab === "live" ? live : ended;
 
-    const handleDelete = useCallback(async (alertId) => {
-        try {
-            await deleteAlert(alertId);
-            setAlerts((prev) => prev.filter((a) => a.id !== alertId));
-        } catch (e) {
-            setError(e?.message ?? "Could not delete alert.");
-        }
-    }, []);
-
-    useFocusEffect(
-        useCallback(() => {
-            loadAlerts();
-        }, [loadAlerts])
-    );
-
-    if (loading && alerts.length === 0) {
-        return (
-            <SafeAreaView style={[styles.centered, styles.container]} edges={["top"]}>
-                <AuthBackground />
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.emptyText}>Loading your alerts…</Text>
-                <TouchableOpacity
-                    onPress={() => navigation.getParent()?.navigate("CreateAlert")}
-                    activeOpacity={0.85}
-                    style={styles.fab}
-                >
-                    <MaterialCommunityIcons name="plus" size={28} color="#FFF" />
-                </TouchableOpacity>
-            </SafeAreaView>
-        );
+  async function handleDelete(alert, close) {
+    const ok = await confirm({
+      title: "Delete this alert?",
+      message: `“${alert.title}” will be removed for everyone.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) {
+      close?.();
+      return;
     }
+    try {
+      await remove(alert.id);
+      haptics.success();
+      toast.show("Alert deleted");
+    } catch (e) {
+      haptics.error();
+      toast.show("Couldn't delete", { tone: "error", message: e?.message });
+    }
+  }
 
-    return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <AuthBackground />
-            {error ? (
-                <View style={styles.centered}>
-                    <MaterialCommunityIcons
-                        name="alert-circle-outline"
-                        size={48}
-                        color={COLORS.danger}
-                    />
-                    <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity onPress={() => loadAlerts()} style={styles.retryBtn}>
-                        <Text style={styles.retryBtnText}>Retry</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : alerts.length === 0 ? (
-                <View style={styles.centered}>
-                    <View style={styles.emptyIconWrap}>
-                        <MaterialCommunityIcons
-                            name="format-list-bulleted"
-                            size={36}
-                            color={COLORS.textSecondary}
-                        />
-                    </View>
-                    <Text style={styles.emptyTitle}>My Alerts</Text>
-                    <Text style={styles.emptyText}>
-                        You haven't created any alerts yet. Tap the button below to create one.
-                    </Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={alerts}
-                    keyExtractor={(a) => a.id}
-                    renderItem={({ item }) => <AlertRow item={item} onDelete={handleDelete} />}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={() => loadAlerts(true)}
-                            colors={[COLORS.primary]}
-                        />
-                    }
-                />
-            )}
+  const header = (
+    <View>
+      <LargeHeader
+        title="Your alerts"
+        subtitle={status === "ready" ? `${live.length} live · ${ended.length} ended` : " "}
+      />
+      <SegmentedControl
+        value={tab}
+        onChange={setTab}
+        style={s.segment}
+        options={[
+          { value: "live", label: `Live${live.length ? ` ${live.length}` : ""}` },
+          { value: "ended", label: `Ended${ended.length ? ` ${ended.length}` : ""}` },
+        ]}
+      />
+      {status === "ready" && data.length > 0 ? (
+        <Text variant="caption" color="textSubtle" style={s.hint}>
+          Swipe left on an alert to delete it.
+        </Text>
+      ) : null}
+    </View>
+  );
 
-            <TouchableOpacity
-                onPress={() => navigation.getParent()?.navigate("CreateAlert")}
-                activeOpacity={0.85}
-                style={styles.fab}
-            >
-                <MaterialCommunityIcons name="plus" size={28} color="#FFF" />
-            </TouchableOpacity>
-        </SafeAreaView>
+  let empty = null;
+  if (status === "loading") {
+    empty = (
+      <View style={s.pad}>
+        {[0, 1].map((i) => (
+          <AlertCardSkeleton key={i} />
+        ))}
+      </View>
     );
+  } else if (status === "error") {
+    empty = (
+      <EmptyState
+        icon="wifi-off"
+        title="Couldn't load your alerts"
+        message={error}
+        action={<Button title="Try again" variant="secondary" size="md" full={false} onPress={retry} />}
+      />
+    );
+  } else if (tab === "live") {
+    empty = (
+      <EmptyState
+        icon="radio"
+        title="Nothing live from you"
+        message="Seen free food, a closed path or a lost wallet? Share it with campus."
+        action={<Button title="Post an alert" icon="plus" size="md" full={false} onPress={() => navigation.navigate("CreateAlert")} />}
+      />
+    );
+  } else {
+    empty = <EmptyState icon="archive" title="No ended alerts" message="Alerts you've posted show up here once they expire." />;
+  }
+
+  return (
+    <Screen>
+      <Animated.FlatList
+        data={status === "ready" ? data : []}
+        keyExtractor={(a) => a.id}
+        ListHeaderComponent={header}
+        ListEmptyComponent={empty}
+        contentContainerStyle={[s.content, { paddingBottom: bottomSpace }]}
+        itemLayoutAnimation={LinearTransition.springify().damping(22)}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.textSubtle} colors={[colors.accent]} progressBackgroundColor={colors.surface} />
+        }
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={FadeInDown.delay(Math.min(index, 6) * 45).duration(380)}
+            exiting={FadeOut.duration(200)}
+            style={s.item}
+          >
+            <ReanimatedSwipeable
+              friction={1.6}
+              rightThreshold={ACTION_WIDTH / 2}
+              overshootRight={false}
+              onSwipeableWillOpen={() => haptics.soft()}
+              onSwipeableOpenStartDrag={markSwipe}
+              onSwipeableCloseStartDrag={markSwipe}
+              renderRightActions={(_progress, drag, swipeable) => (
+                <DeleteAction drag={drag} onPress={() => handleDelete(item, () => swipeable.close())} />
+              )}
+            >
+              <AlertCard
+                alert={item}
+                now={now}
+                distance={distanceTo(item)}
+                onPress={() => {
+                  if (Date.now() - lastSwipe.current < 500) return;
+                  navigation.navigate("AlertDetail", { id: item.id, alert: item });
+                }}
+              />
+            </ReanimatedSwipeable>
+          </Animated.View>
+        )}
+      />
+    </Screen>
+  );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-    },
-    centered: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: SPACING.lg,
-    },
-    listContent: {
-        paddingHorizontal: SPACING.lg,
-        paddingTop: SPACING.md,
-        paddingBottom: SPACING.lg + 70,
-    },
-    row: {
-        flexDirection: "row",
-        backgroundColor: COLORS.card,
-        borderRadius: RADIUS.md,
-        padding: SPACING.md,
-        marginBottom: SPACING.sm,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    thumb: {
-        width: 56,
-        height: 56,
-        borderRadius: RADIUS.sm,
-        backgroundColor: COLORS.background,
-    },
-    thumbPlaceholder: {
-        width: 56,
-        height: 56,
-        borderRadius: RADIUS.sm,
-        backgroundColor: COLORS.background,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    rowContent: {
-        flex: 1,
-        marginLeft: SPACING.md,
-    },
-    rowTitle: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    rowMessage: {
-        fontSize: 14,
-        color: COLORS.textSecondary,
-        marginTop: 2,
-    },
-    rowMeta: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: SPACING.sm,
-        gap: SPACING.sm,
-    },
-    rowCategory: {
-        fontSize: 12,
-        color: COLORS.primary,
-        fontWeight: "500",
-    },
-    rowTime: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-    },
-    deleteBtn: {
-        justifyContent: "center",
-        paddingLeft: SPACING.sm,
-    },
-    emptyIconWrap: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        backgroundColor: COLORS.card,
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: SPACING.md,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    emptyTitle: {
-        fontSize: 22,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginBottom: SPACING.sm,
-    },
-    emptyText: {
-        fontSize: 15,
-        color: COLORS.textSecondary,
-        textAlign: "center",
-        maxWidth: 260,
-    },
-    errorText: {
-        fontSize: 15,
-        color: COLORS.danger,
-        textAlign: "center",
-        marginTop: SPACING.sm,
-    },
-    retryBtn: {
-        marginTop: SPACING.md,
-        paddingVertical: SPACING.sm,
-        paddingHorizontal: SPACING.lg,
-        backgroundColor: COLORS.primary,
-        borderRadius: RADIUS.md,
-    },
-    retryBtnText: {
-        color: "#FFF",
-        fontWeight: "600",
-    },
-    fab: {
-        position: "absolute",
-        right: SPACING.lg,
-        bottom: SPACING.lg + 56,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: COLORS.primary,
-        justifyContent: "center",
-        alignItems: "center",
-        shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-});
+const useStyles = makeStyles((c) => ({
+  content: {
+    flexGrow: 1,
+  },
+  segment: {
+    marginHorizontal: space.xl,
+    marginTop: space.xs,
+    marginBottom: space.md,
+  },
+  hint: {
+    marginHorizontal: space.xl,
+    marginBottom: space.md,
+  },
+  pad: {
+    paddingHorizontal: space.xl,
+    paddingTop: space.sm,
+  },
+  item: {
+    paddingHorizontal: space.xl,
+    marginBottom: space.md,
+  },
+  actionSlot: {
+    width: ACTION_WIDTH,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  action: {
+    width: ACTION_WIDTH - space.md,
+    height: 72,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.xs,
+    backgroundColor: c.dangerSoft,
+  },
+}));

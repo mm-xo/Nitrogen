@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
-import { makeStyles, motion, radius, space, useTheme } from "../theme";
+import { glassBlur, makeStyles, motion, radius, space, useTheme } from "../theme";
 import { Text } from "./Text";
 import { Icon } from "./Icon";
 import { PressableScale } from "./PressableScale";
@@ -212,6 +212,7 @@ const useStyles = makeStyles((c, t) => ({
   },
   iconButtonFloating: {
     backgroundColor: c.glass,
+    ...glassBlur,
     borderWidth: 1,
     borderColor: c.border,
     ...t.shadow.md,

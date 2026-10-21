@@ -1,3 +1,10 @@
+import { Platform } from "react-native";
+
+// Floating chrome is frosted on web (backdrop-filter); native has no backdrop blur, so it stays near-opaque.
+const glass = (rgb) => `rgba(${rgb}, ${Platform.OS === "web" ? 0.72 : 0.97})`;
+
+export const glassBlur = Platform.OS === "web" ? { backdropFilter: "saturate(180%) blur(20px)" } : null;
+
 // Neutral, low-chroma surfaces with a single blue accent. Category colours carry the rest.
 export const palettes = {
   light: {
@@ -22,7 +29,7 @@ export const palettes = {
     onInverse: "#FFFFFF",
     overlay: "rgba(10, 10, 12, 0.35)",
     skeleton: "#EAEAEE",
-    glass: "rgba(255, 255, 255, 0.94)",
+    glass: glass("255, 255, 255"),
   },
   dark: {
     bg: "#09090B",
@@ -46,7 +53,7 @@ export const palettes = {
     onInverse: "#09090B",
     overlay: "rgba(0, 0, 0, 0.55)",
     skeleton: "#1C1C21",
-    glass: "rgba(22, 22, 26, 0.94)",
+    glass: glass("22, 22, 26"),
   },
 };
 

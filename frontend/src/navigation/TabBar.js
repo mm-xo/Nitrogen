@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
-import { makeStyles, motion, space } from "../theme";
+import { glassBlur, makeStyles, motion, space } from "../theme";
 import { Icon, PressableScale } from "../ui";
 import { haptics } from "../utils/haptics";
 
@@ -117,6 +117,7 @@ const useStyles = makeStyles((c, t) => ({
     paddingHorizontal: space.sm,
     borderRadius: TAB_BAR_HEIGHT / 2,
     backgroundColor: c.glass,
+    ...glassBlur,
     borderWidth: 1,
     borderColor: c.border,
     ...t.shadow.lg,

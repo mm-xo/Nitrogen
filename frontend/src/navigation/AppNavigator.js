@@ -16,6 +16,7 @@ import { AlertDetailScreen } from "../screens/AlertDetailScreen";
 import { MyAlertsScreen } from "../screens/MyAlertsScreen";
 import { CreateAlertScreen } from "../screens/CreateAlertScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { EditProfileScreen } from "../screens/EditProfileScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -70,6 +71,7 @@ export function AppNavigator() {
         <>
           <Stack.Screen name="Tabs" component={MainTabs} options={{ animation: "fade" }} />
           <Stack.Screen name="AlertDetail" component={AlertDetailScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           <Stack.Screen
             name="CreateAlert"
             component={CreateAlertScreen}

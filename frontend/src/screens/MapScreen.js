@@ -7,7 +7,7 @@ import Animated, { FadeIn, FadeInDown, SlideInDown, SlideOutDown } from "react-n
 import { CATEGORY_LIST, getCategory } from "../constants/categories";
 import { useLocation } from "../context/LocationContext";
 import { useAlerts } from "../hooks/useAlerts";
-import { makeStyles, radius, space, useTheme } from "../theme";
+import { glassBlur, makeStyles, radius, space, useTheme } from "../theme";
 import { Chip, Icon, IconButton, PressableScale, Text } from "../ui";
 import { CampusMap } from "../components/map/CampusMap";
 import { CategoryTile } from "../components/CategoryTile";
@@ -219,6 +219,7 @@ const useStyles = makeStyles((c, t) => ({
     paddingRight: space.md + 2,
     borderRadius: radius.pill,
     backgroundColor: c.glass,
+    ...glassBlur,
     borderWidth: 1,
     borderColor: c.border,
     ...t.shadow.md,
