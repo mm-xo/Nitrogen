@@ -11,7 +11,8 @@ import { TabBar } from "./TabBar";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
 import { MapScreen } from "../screens/MapScreen";
-import { Alerts as FeedScreen } from "../screens/Alerts";
+import { FeedScreen } from "../screens/FeedScreen";
+import { AlertDetailScreen } from "../screens/AlertDetailScreen";
 import { MyAlertsScreen } from "../screens/MyAlertsScreen";
 import { CreateAlertScreen } from "../screens/CreateAlertScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
@@ -68,6 +69,7 @@ export function AppNavigator() {
       ) : (
         <>
           <Stack.Screen name="Tabs" component={MainTabs} options={{ animation: "fade" }} />
+          <Stack.Screen name="AlertDetail" component={AlertDetailScreen} />
           <Stack.Screen
             name="CreateAlert"
             component={CreateAlertScreen}

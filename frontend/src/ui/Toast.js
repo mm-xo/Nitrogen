@@ -31,7 +31,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <View pointerEvents="none" style={[s.host, { top: insets.top + space.sm }]}>
+      <View style={[s.host, { top: insets.top + space.sm }]}>
         {toasts.map((t) => {
           const tone = TONES[t.tone] ?? TONES.info;
           return (
@@ -69,6 +69,7 @@ export function useToast() {
 
 const useStyles = makeStyles((c, t) => ({
   host: {
+    pointerEvents: "none",
     position: "absolute",
     left: space.lg,
     right: space.lg,

@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Feather } from "@expo/vector-icons";
 import {
   useFonts,
   Inter_400Regular,
@@ -43,7 +44,10 @@ function ThemedNavigation() {
   return (
     <>
       <StatusBar style={isDark ? "light" : "dark"} />
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer
+        theme={navigationTheme}
+        documentTitle={{ formatter: (options) => (options?.title ? `${options.title} · Nitrogen` : "Nitrogen") }}
+      >
         <AppNavigator />
       </NavigationContainer>
     </>
@@ -56,6 +60,7 @@ export default function App() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    ...Feather.font,
   });
   const ready = fontsLoaded || !!fontError;
 

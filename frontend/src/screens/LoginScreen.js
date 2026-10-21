@@ -1,280 +1,221 @@
 import * as React from "react";
-import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+
 import { useAuth } from "../context/AuthContext";
-import { AuthBackground } from "../components/AuthBackground";
-import { DARK_COLORS } from "../themes/colors";
+import { DEMO_USER, isLocalBackend } from "../data";
+import { makeStyles, space } from "../theme";
+import { Button, Card, Icon, PressableScale, Screen, Text, TextField, useToast } from "../ui";
+import { Logo } from "../components/Logo";
+import { haptics } from "../utils/haptics";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const enter = (i) => FadeInDown.delay(80 + i * 60).duration(520);
 
 export function LoginScreen() {
-  const { signIn, resetPassword } = useAuth();
+  const s = useStyles();
   const navigation = useNavigation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [resetSending, setResetSending] = useState(false);
+  const toast = useToast();
+  const { signIn, resetPassword } = useAuth();
 
-  async function handleSignIn() {
-    setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) Alert.alert("Sign in failed", error.message);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [demoLoading, setDemoLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const passwordRef = React.useRef(null);
+
+  const canSubmit = EMAIL_REGEX.test(email.trim()) && password.length > 0 && !loading;
+
+  async function submit(creds = { email, password }, setBusy = setLoading) {
+    setError(null);
+    setBusy(true);
+    const { error: err } = await signIn(creds.email, creds.password);
+    setBusy(false);
+    if (err) {
+      haptics.error();
+      setError(err.message || "Couldn't sign you in.");
+    } else {
+      haptics.success();
+    }
   }
 
-  async function handleForgotPassword() {
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      Alert.alert("Email required", "Enter your email above first.");
+  async function forgotPassword() {
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setError("Enter your email above, then tap “Forgot password?”.");
       return;
     }
-    setResetSending(true);
-    const { error } = await resetPassword(trimmedEmail);
-    setResetSending(false);
-    if (error) {
-      Alert.alert("Error", error.message);
-    } else {
-      Alert.alert(
-        "Check your email",
-        "We sent you a link to reset your password."
-      );
-    }
+    const { error: err } = await resetPassword(email.trim());
+    if (err) toast.show("Can't reset right now", { tone: "info", message: err.message, duration: 5000 });
+    else toast.show("Check your inbox", { message: "We sent you a reset link." });
   }
 
-  const canSubmit = email.trim() && password && !loading;
-
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <AuthBackground />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.brand}>
-            <Text style={styles.logo}>Nitrogen</Text>
-            <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to continue
-            </Text>
-          </View>
+    <Screen edges={["top", "bottom"]}>
+      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <Animated.View entering={FadeIn.duration(500)}>
+            <Logo />
+          </Animated.View>
 
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={DARK_COLORS.muted}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              editable={!loading}
-            />
+          <View style={s.main}>
+            <Animated.View entering={enter(0)}>
+              <Text variant="display">Welcome back</Text>
+              <Text variant="body" color="textMuted" style={s.lede}>
+                What's happening around campus, as it happens.
+              </Text>
+            </Animated.View>
 
-            <View style={styles.passwordRow}>
-              <TextInput
-                style={[styles.input, styles.passwordInput]}
-                placeholder="Password"
-                placeholderTextColor={DARK_COLORS.muted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
+            <Animated.View entering={enter(1)} style={s.form}>
+              <TextField
+                label="Email"
+                icon="mail"
+                placeholder="you@myumanitoba.ca"
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  setError(null);
+                }}
                 autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
                 editable={!loading}
               />
-              <TouchableOpacity
-                onPress={() => setShowPassword((p) => !p)}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={styles.eyeBtn}
-              >
-                <MaterialCommunityIcons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={22}
-                  color={DARK_COLORS.muted}
-                />
-              </TouchableOpacity>
-            </View>
+              <TextField
+                ref={passwordRef}
+                label="Password"
+                icon="lock"
+                placeholder="Your password"
+                value={password}
+                secure
+                onChangeText={(v) => {
+                  setPassword(v);
+                  setError(null);
+                }}
+                autoCapitalize="none"
+                autoComplete="current-password"
+                textContentType="password"
+                returnKeyType="go"
+                onSubmitEditing={() => canSubmit && submit()}
+                editable={!loading}
+                style={s.passwordField}
+              />
+              <PressableScale onPress={forgotPassword} style={s.forgot} hitSlop={8} accessibilityRole="button">
+                <Text variant="callout" color="textMuted">
+                  Forgot password?
+                </Text>
+              </PressableScale>
 
-            <TouchableOpacity
-              onPress={handleForgotPassword}
-              disabled={resetSending}
-              style={styles.forgotWrap}
-            >
-              <Text style={styles.forgot}>
-                {resetSending ? "Sending..." : "Forgot password?"}
-              </Text>
-            </TouchableOpacity>
+              {error ? (
+                <Animated.View entering={FadeIn} style={s.error}>
+                  <Icon name="alert-circle" size={16} color="danger" />
+                  <Text variant="footnote" color="danger" style={s.errorText}>
+                    {error}
+                  </Text>
+                </Animated.View>
+              ) : null}
 
-            <TouchableOpacity
-              onPress={handleSignIn}
-              disabled={!canSubmit}
-              activeOpacity={0.85}
-              style={[styles.cta, !canSubmit && styles.ctaDisabled]}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.ctaText}>Log in</Text>
-              )}
-            </TouchableOpacity>
+              <Button title="Sign in" onPress={() => submit()} loading={loading} disabled={!canSubmit} />
+            </Animated.View>
+
+            {isLocalBackend ? (
+              <Animated.View entering={enter(2)}>
+                <Card style={s.demo}>
+                  <View style={s.demoHead}>
+                    <Icon name="hard-drive" size={16} color="accent" />
+                    <Text variant="overline" color="accent">
+                      Demo mode
+                    </Text>
+                  </View>
+                  <Text variant="footnote" color="textMuted" style={s.demoText}>
+                    No server needed — accounts and alerts live on this device, with sample alerts around Fort Garry campus.
+                  </Text>
+                  <Button
+                    title="Continue with demo account"
+                    variant="secondary"
+                    size="md"
+                    icon="arrow-right"
+                    loading={demoLoading}
+                    onPress={() => submit(DEMO_USER, setDemoLoading)}
+                  />
+                </Card>
+              </Animated.View>
+            ) : null}
           </View>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Signup")}
-            style={styles.linkWrap}
-          >
-            <Text style={styles.link}>
-              Don't have an account?{" "}
-              <Text style={styles.linkAccent}>Sign up</Text>
+          <Animated.View entering={enter(3)} style={s.footer}>
+            <Text variant="callout" color="textMuted">
+              New to Nitrogen?
             </Text>
-          </TouchableOpacity>
+            <PressableScale onPress={() => navigation.navigate("Signup")} hitSlop={8} accessibilityRole="link">
+              <Text variant="callout" color="accent">
+                Create an account
+              </Text>
+            </PressableScale>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: DARK_COLORS.bg,
-  },
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
+const useStyles = makeStyles(() => ({
+  flex: { flex: 1 },
+  content: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 32,
+    width: "100%",
+    maxWidth: 460,
+    alignSelf: "center",
+    paddingHorizontal: space.xxl,
+    paddingTop: space.xl,
+    paddingBottom: space.xl,
   },
-  brand: {
-    alignItems: "center",
-    marginBottom: 40,
+  main: {
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: space.huge,
   },
-  logo: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: DARK_COLORS.text,
-    letterSpacing: -0.5,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: DARK_COLORS.text,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: DARK_COLORS.muted,
+  lede: {
+    marginTop: space.sm,
   },
   form: {
-    marginBottom: 24,
+    marginTop: space.xxxl,
   },
-  input: {
-    backgroundColor: DARK_COLORS.inputBg,
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: DARK_COLORS.text,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: DARK_COLORS.border,
-  },
-  passwordRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: DARK_COLORS.inputBg,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: DARK_COLORS.border,
-    marginBottom: 12,
-  },
-  passwordInput: {
-    flex: 1,
-    marginBottom: 0,
-    backgroundColor: "transparent",
-  },
-  eyeBtn: {
-    padding: 12,
-  },
-  forgotWrap: {
-    alignSelf: "flex-end",
-    marginBottom: 20,
-    marginTop: -4,
+  passwordField: {
+    marginBottom: space.sm,
   },
   forgot: {
-    fontSize: 14,
-    color: DARK_COLORS.accent,
-    fontWeight: "500",
+    alignSelf: "flex-end",
+    marginBottom: space.xl,
   },
-  cta: {
-    backgroundColor: DARK_COLORS.accent,
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
+  error: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: space.sm,
+    marginBottom: space.lg,
   },
-  ctaDisabled: {
-    opacity: 0.5,
+  errorText: {
+    flex: 1,
   },
-  ctaText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+  demo: {
+    marginTop: space.xxl,
   },
-  divider: {
+  demoHead: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    gap: space.sm,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: DARK_COLORS.divider,
+  demoText: {
+    marginTop: space.sm,
+    marginBottom: space.lg,
   },
-  dividerText: {
-    fontSize: 13,
-    color: DARK_COLORS.muted,
-    marginHorizontal: 16,
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: space.xs + 2,
   },
-  linkWrap: {
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  link: {
-    fontSize: 15,
-    color: DARK_COLORS.muted,
-  },
-  linkAccent: {
-    color: DARK_COLORS.accent,
-    fontWeight: "600",
-  },
-});
+}));

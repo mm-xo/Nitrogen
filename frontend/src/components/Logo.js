@@ -10,7 +10,7 @@ export function Logo({ size = "md", showWord = true }) {
   const tile = size === "lg" ? 40 : size === "sm" ? 22 : 30;
   return (
     <View style={s.row} accessibilityRole="image" accessibilityLabel="Nitrogen">
-      <View style={[s.tile, { width: tile, height: tile, borderRadius: tile * 0.32 }]}>
+      <View style={[s.tile, { width: tile, height: tile, borderRadius: tile * 0.32, padding: tile * 0.17 }]}>
         <View style={[s.ping, { width: tile * 0.3, height: tile * 0.3, borderRadius: tile }]} />
       </View>
       {showWord ? (
@@ -35,7 +35,6 @@ const useStyles = makeStyles((c) => ({
     backgroundColor: c.inverse,
     alignItems: "flex-end",
     justifyContent: "flex-start",
-    padding: "16%",
   },
   ping: {
     backgroundColor: c.accent,

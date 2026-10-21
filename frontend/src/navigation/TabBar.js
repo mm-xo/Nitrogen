@@ -78,7 +78,7 @@ export function TabBar({ state, navigation }) {
   };
 
   return (
-    <View pointerEvents="box-none" style={[s.host, { bottom: Math.max(insets.bottom, space.md) }]}>
+    <View style={[s.host, { bottom: Math.max(insets.bottom, space.md) }]}>
       <View style={s.bar} accessibilityRole="tablist">
         <Animated.View style={[s.indicator, indicatorStyle]} />
         {state.routes.slice(0, middle).map((r, i) => renderTab(r, i))}
@@ -102,6 +102,7 @@ export function TabBar({ state, navigation }) {
 
 const useStyles = makeStyles((c, t) => ({
   host: {
+    pointerEvents: "box-none",
     position: "absolute",
     left: 0,
     right: 0,
