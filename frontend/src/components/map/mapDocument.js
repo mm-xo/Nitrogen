@@ -25,8 +25,9 @@ body { -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user
 .maplibregl-ctrl-attrib { font: 10px/1.4 -apple-system, system-ui, sans-serif; }
 .maplibregl-ctrl-attrib.maplibregl-compact { background: var(--glass); color: var(--muted); }
 .maplibregl-ctrl-attrib a { color: var(--muted); }
-/* MapLibre owns position/transform of the marker root, so all visuals live on the inner .n-pin. */
-.n-marker { cursor: pointer; }
+/* MapLibre owns position/transform of the marker root, so all visuals live on the inner .n-pin.
+   Markers ignore input: taps are matched to the nearest pin in script (see "Tap detection"). */
+.n-marker, .n-user { pointer-events: none; }
 .n-pin { position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .n-pin::before { content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: var(--pin);
   border: 2.5px solid #fff; box-sizing: border-box; box-shadow: 0 1px 4px rgba(0,0,0,.3);
@@ -97,6 +98,8 @@ const SCRIPT = `
     zoom: deltaToZoom(INIT.delta),
     interactive: INIT.interactive,
     attributionControl: false,
+    // Default is 3px, so the slightest finger wobble on a tap became a pan.
+    clickTolerance: 6,
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
@@ -119,7 +122,50 @@ const SCRIPT = `
       paint: { "line-color": state.colors.accent, "line-opacity": 0.45, "line-width": 1.5 } }, firstLabel);
   });
 
-  map.on("click", function () { post({ type: "select", id: null }); });
+  // Tap detection. MapLibre treats any drift past clickTolerance as a pan and calls preventDefault()
+  // on touchmove, which stops the WebView from ever firing "click" on a marker. So taps are
+  // recognised from pointer events with a forgiving slop, and the nearest pin within reach wins:
+  // the dots stay small but are easy to hit, and overlapping pins resolve to the closest one.
+  var TAP_SLOP = 12;
+  var TAP_RADIUS = 30;
+  var surface = map.getCanvasContainer();
+  var tap = null;
+
+  function pinNear(e) {
+    var rect = map.getContainer().getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var y = e.clientY - rect.top;
+    var best = null;
+    var bestDist = TAP_RADIUS;
+    state.pins.forEach(function (pin) {
+      var p = map.project([pin.lng, pin.lat]);
+      var d = Math.hypot(p.x - x, p.y - y);
+      if (d <= bestDist) {
+        best = pin;
+        bestDist = d;
+      }
+    });
+    return best;
+  }
+
+  if (INIT.interactive) {
+    surface.addEventListener("pointerdown", function (e) {
+      // A second finger means a pinch, never a tap.
+      tap = e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY, t: Date.now() } : null;
+    }, true);
+    surface.addEventListener("pointermove", function (e) {
+      if (tap && e.pointerId === tap.id && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > TAP_SLOP) tap = null;
+      if (e.pointerType === "mouse" && e.buttons === 0) surface.style.cursor = pinNear(e) ? "pointer" : "";
+    }, true);
+    surface.addEventListener("pointerup", function (e) {
+      var t = tap;
+      tap = null;
+      if (!t || e.pointerId !== t.id || Date.now() - t.t > 700) return;
+      var pin = pinNear(e);
+      post({ type: "select", id: pin ? pin.id : null });
+    }, true);
+    surface.addEventListener("pointercancel", function () { tap = null; }, true);
+  }
 
   // The dark style references fill patterns it doesn't ship; a blank image silences the warning.
   map.on("styleimagemissing", function (e) {
@@ -130,14 +176,8 @@ const SCRIPT = `
   function pinElement(pin) {
     var el = document.createElement("div");
     el.className = "n-marker";
-    el.title = pin.title;
-    el.setAttribute("role", "button");
     el.setAttribute("aria-label", pin.title);
     el.innerHTML = '<div class="n-pin n-pin-in"><svg viewBox="0 0 24 24">' + (ICONS[pin.icon] || ICONS.bell) + "</svg></div>";
-    el.addEventListener("click", function (e) {
-      e.stopPropagation();
-      post({ type: "select", id: pin.id });
-    });
     return el;
   }
 
@@ -148,7 +188,6 @@ const SCRIPT = `
       var m = markers[pin.id];
       if (!m) {
         var node = pinElement(pin);
-        if (!INIT.interactive) node.style.pointerEvents = "none";
         m = markers[pin.id] = new maplibregl.Marker({ element: node, anchor: "center" }).setLngLat([pin.lng, pin.lat]).addTo(map);
       } else {
         m.setLngLat([pin.lng, pin.lat]);
