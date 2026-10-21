@@ -20,7 +20,7 @@ import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "../context/AuthContext";
-import { useLocation } from "../context/Locationcontext";
+import { useLocation } from "../context/LocationContext";
 import { backend } from "../data";
 import { isWithinCampus, CAMPUS_CENTER } from "../location/Distance";
 import { withTimeout } from "../utils/promiseUtils";

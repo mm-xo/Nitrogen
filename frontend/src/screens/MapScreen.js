@@ -6,7 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import LocationMapView from "../map/MapView";
 import { COLORS } from "../themes/colors";
 import { AuthBackground } from "../components/AuthBackground";
-import { useLocation } from "../context/Locationcontext";
+import { useLocation } from "../context/LocationContext";
 import { CAMPUS_CENTER } from "../constants/campus";
 
 export function MapScreen() {
