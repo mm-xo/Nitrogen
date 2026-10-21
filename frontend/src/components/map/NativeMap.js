@@ -7,6 +7,7 @@ import { CAMPUS_CENTER, CAMPUS_RADIUS_M } from "../../constants/campus";
 import { getCategory, withAlpha } from "../../constants/categories";
 import { useTheme } from "../../theme";
 import { darkMapStyle, lightMapStyle } from "./mapStyles";
+import { MARKER_PRESS_WINDOW, nearestPinId } from "./mapTaps";
 
 // Apple Maps on iOS; Google Maps on Android (only used in builds that ship a Maps API key, see mapEngine.js).
 const provider = Platform.OS === "android" ? PROVIDER_GOOGLE : undefined;
@@ -70,7 +71,40 @@ export const NativeMap = React.forwardRef(function NativeMap(
 ) {
   const mapRef = React.useRef(null);
   const height = React.useRef(0);
+  const lastMarkerPress = React.useRef(0);
+  const latest = React.useRef({ alerts, onSelect });
+  latest.current = { alerts, onSelect };
   const { colors, isDark, scheme } = useTheme();
+
+  const pressMarker = React.useCallback((alert) => {
+    lastMarkerPress.current = Date.now();
+    latest.current.onSelect?.(alert);
+  }, []);
+
+  // Under the new architecture the map's onPress always reports action "press", even for a tap that
+  // landed on a marker, and on iOS it arrives after the marker's own onPress. So a recent marker
+  // press wins; any other tap on iOS selects the nearest pin within reach, and only a tap on empty
+  // map deselects.
+  const pressMap = React.useCallback(async (e) => {
+    const { action, position } = e.nativeEvent ?? {};
+    if (action === "marker-press" || Date.now() - lastMarkerPress.current < MARKER_PRESS_WINDOW) return;
+    const { alerts: list, onSelect: select } = latest.current;
+    if (Platform.OS === "ios" && position && mapRef.current) {
+      const points = await Promise.all(
+        list.map((a) =>
+          mapRef.current
+            .pointForCoordinate({ latitude: a.latitude, longitude: a.longitude })
+            .then((p) => ({ id: a.id, x: p.x, y: p.y }), () => null)
+        )
+      );
+      const id = nearestPinId(position, points.filter(Boolean));
+      if (id) {
+        pressMarker(list.find((a) => a.id === id));
+        return;
+      }
+    }
+    select?.(null);
+  }, [pressMarker]);
 
   React.useImperativeHandle(ref, () => ({
     // bottomInset: px covered by UI at the bottom; the point lands centred in the space above it.
@@ -108,9 +142,7 @@ export const NativeMap = React.forwardRef(function NativeMap(
       onLayout={(e) => {
         height.current = e.nativeEvent.layout.height;
       }}
-      onPress={(e) => {
-        if (e.nativeEvent?.action !== "marker-press") onSelect?.(null);
-      }}
+      onPress={pressMap}
     >
       {showCampus ? (
         <Circle
@@ -122,7 +154,7 @@ export const NativeMap = React.forwardRef(function NativeMap(
         />
       ) : null}
       {alerts.map((a) => (
-        <Pin key={a.id} alert={a} selected={a.id === selectedId} onPress={onSelect} />
+        <Pin key={a.id} alert={a} selected={a.id === selectedId} onPress={pressMarker} />
       ))}
     </MapView>
   );
