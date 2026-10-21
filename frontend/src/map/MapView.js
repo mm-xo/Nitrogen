@@ -88,7 +88,7 @@ export default function LocationMapView({ coordinates, refreshTrigger = 0 }) {
                 longitude: a.longitude,
               }}
               onPress={() =>
-              navigation.navigate("Alerts", { highlightId: a.id })
+              navigation.navigate("Feed", { highlightId: a.id })
             }
             >
               <View
