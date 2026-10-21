@@ -21,20 +21,6 @@ export function getCategory(key) {
   return byValue[k] ?? byDb[k] ?? FALLBACK;
 }
 
-// Legacy lookups for screens not yet moved to getCategory(); removed once they are.
-const LEGACY_ICONS = {
-  Food: "food",
-  Safety: "alert-circle",
-  Social: "account-group",
-  Academic: "school",
-  Sports: "basketball",
-  LostFound: "magnify",
-  Events: "bullhorn",
-};
-export const CATEGORY_LABELS = Object.fromEntries(CATEGORY_LIST.map((c) => [c.db, c.label]));
-export const CATEGORY_ICONS = LEGACY_ICONS;
-export const CATEGORY_COLORS = Object.fromEntries(CATEGORY_LIST.map((c) => [c.value, c.color]));
-
 export function withAlpha(hex, alpha) {
   const a = Math.round(alpha * 255)
     .toString(16)

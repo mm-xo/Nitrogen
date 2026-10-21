@@ -10,11 +10,11 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAFAFA",
+      "backgroundColor": "#F7F7F8",
       "dark": {
         "image": "./assets/splash-icon.png",
         "resizeMode": "contain",
-        "backgroundColor": "#0B0B0D"
+        "backgroundColor": "#09090B"
       }
     },
     "ios": {
@@ -27,7 +27,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0B0B0D"
+        "backgroundColor": "#0E0E11"
       },
       "edgeToEdgeEnabled": true
     },
@@ -35,7 +35,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "name": "Nitrogen",
-      "themeColor": "#0B0B0D"
+      "themeColor": "#0E0E11"
     },
     "plugins": [
       "expo-secure-store",
