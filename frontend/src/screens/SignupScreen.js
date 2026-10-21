@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { supabase } from "../../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 import { AuthBackground } from "../components/AuthBackground";
 import { DARK_COLORS } from "../themes/colors";
 
@@ -35,6 +35,7 @@ function FieldError({ error }) {
 
 export function SignupScreen() {
   const navigation = useNavigation();
+  const { signUp } = useAuth();
   const [first_name, setFirstName] = useState("");
   const [last_name, setLastName] = useState("");
   const [student_email, setStudentEmail] = useState("");
@@ -74,16 +75,10 @@ export function SignupScreen() {
     if (!validate() || !canSubmit) return;
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: student_email.trim(),
-      password,
-      options: {
-        data: {
-          first_name: first_name.trim(),
-          last_name: last_name.trim(),
-          account_type,
-        },
-      },
+    const { session, error } = await signUp(student_email.trim(), password, {
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      account_type,
     });
     setLoading(false);
 
@@ -92,8 +87,8 @@ export function SignupScreen() {
       return;
     }
 
-    if (!!data?.session) {
-      Alert.alert("Welcome", "Account created successfully.");
+    if (session) {
+      return;
     } else {
       Alert.alert(
         "Check your email",

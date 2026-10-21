@@ -3,7 +3,7 @@ import MapView, { Marker, Circle } from 'react-native-maps';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { getAlertCoordinates } from "./AlterPins";
 import { CATEGORY_COLORS } from "../constants/categories";
-import { supabase } from "../../lib/supabase";
+import { backend } from "../data";
 import { useNavigation } from "@react-navigation/native";
 
 
@@ -43,20 +43,7 @@ export default function LocationMapView({ coordinates, refreshTrigger = 0 }) {
   }, [fetchPins, refreshTrigger]);
 
   React.useEffect(() => {
-    const channel = supabase
-      .channel("alerts-map")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "alerts" },
-        () => {
-          fetchPins();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return backend.alerts.subscribe(fetchPins);
   }, [fetchPins]);
   const center = {
     latitude: UNI_LAT, 

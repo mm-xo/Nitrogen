@@ -19,10 +19,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { decode } from "base64-arraybuffer";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "../context/Locationcontext";
-import { supabase } from "../../lib/supabase";
+import { backend } from "../data";
 import { isWithinCampus, CAMPUS_CENTER } from "../location/Distance";
 import { withTimeout } from "../utils/promiseUtils";
 import { DARK_COLORS } from "../themes/colors";
@@ -161,25 +160,7 @@ export function CreateAlertScreen() {
 
   async function uploadPhoto(uri, base64Data) {
     if (!uri && !base64Data) return null;
-    const ext = (uri || "").split(".").pop() || "jpg";
-    const fileName = `${session?.user?.id}-${Date.now()}.${ext}`;
-
-    const arrayBuffer = base64Data ? decode(base64Data) : null;
-    if (!arrayBuffer) return null;
-
-    const { data, error } = await supabase.storage
-      .from("alert-photos")
-      .upload(fileName, arrayBuffer, {
-        contentType: `image/${ext}`,
-        upsert: false,
-      });
-
-    if (error) throw error;
-
-    const { data: urlData } = supabase.storage
-      .from("alert-photos")
-      .getPublicUrl(data.path);
-    return urlData?.publicUrl || null;
+    return backend.storage.uploadPhoto({ uri, base64: base64Data, userId: session?.user?.id });
   }
 
   function setOutsideCampusError(coords) {
@@ -239,24 +220,28 @@ export function CreateAlertScreen() {
       const expiresAtStr = formatExpiresAt(expiresAt);
       const durationHours = getDurationHours(expiresAt);
 
-      const { error } = await withTimeout(
-        supabase.from("alerts").insert({
+      let error = null;
+      try {
+        await backend.alerts.create({
           user_id: session?.user?.id,
           title: title.trim(),
           message: desc.trim(),
           category: dbCategory,
           latitude: coords.latitude,
           longitude: coords.longitude,
-          expires_at: expiresAtStr,
-          alert_duration_hours: durationHours,
+          expires_at: expiresAt.toISOString(),
           photo_url: photoUrl,
-          is_future_event: false,
-        }),
-        15000,
-        "Could not create alert. Check your connection."
-      );
+        });
+      } catch (e) {
+        error = e;
+      }
 
       if (error) {
+        if (error.code === "outside_campus") {
+          setOutsideCampusError(coords);
+          setUseTestLocation(false);
+          return;
+        }
         const msg = (error?.message || "").toLowerCase();
         if (msg.includes("longitude_check") || msg.includes("latitude_check") || msg.includes("outside") || msg.includes("campus") || msg.includes("bounds")) {
           setOutsideCampusError(coords);

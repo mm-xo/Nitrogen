@@ -1,42 +1,18 @@
-import { supabase } from "../../lib/supabase";
+import { backend } from "../data";
 
 export async function getAlertCoordinates() {
-  const { data, error } = await supabase
-    .from("alerts")
-    .select("id, category, latitude, longitude");
-
-  if (error) throw error;
-
-  return data;
+  return backend.alerts.list();
 }
 
 export async function getAlerts() {
-  const { data, error } = await supabase
-    .from("alerts")
-    .select("id, title, message, category, expires_at, photo_url, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  return data ?? [];
+  return backend.alerts.list();
 }
 
 export async function getMyAlerts(userId) {
   if (!userId) return [];
-
-  const { data, error } = await supabase
-    .from("alerts")
-    .select("id, title, message, category, expires_at, photo_url, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  return data ?? [];
+  return backend.alerts.listByUser(userId);
 }
 
 export async function deleteAlert(alertId) {
-  const { error } = await supabase.from("alerts").delete().eq("id", alertId);
-
-  if (error) throw error;
+  return backend.alerts.remove(alertId);
 }

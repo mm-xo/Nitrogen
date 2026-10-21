@@ -15,7 +15,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../../lib/supabase";
+import { backend } from "../data";
 import { AuthBackground } from "../components/AuthBackground";
 import { DARK_COLORS } from "../themes/colors";
 import { withTimeout } from "../utils/promiseUtils";
@@ -58,15 +58,13 @@ export function ProfileScreen() {
     try {
       setLoading(true);
       setFetchError(null);
-      const { data, error } = await withTimeout(
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .maybeSingle(),
-        15000,
-        "Profile load timed out. Check your connection."
-      );
+      let data = null;
+      let error = null;
+      try {
+        data = await backend.profiles.get(userId);
+      } catch (e) {
+        error = e;
+      }
 
       setLoading(false);
       if (error) {
@@ -151,9 +149,12 @@ export function ProfileScreen() {
       account_type,
     };
 
-    const { error } = await supabase
-      .from("profiles")
-      .upsert(payload, { onConflict: "id" });
+    let error = null;
+    try {
+      await backend.profiles.upsert(payload);
+    } catch (e) {
+      error = e;
+    }
 
     setSaving(false);
 

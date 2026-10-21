@@ -16,12 +16,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../../lib/supabase";
 import { AuthBackground } from "../components/AuthBackground";
 import { DARK_COLORS } from "../themes/colors";
 
 export function LoginScreen() {
-  const { signIn } = useAuth();
+  const { signIn, resetPassword } = useAuth();
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +42,7 @@ export function LoginScreen() {
       return;
     }
     setResetSending(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail);
+    const { error } = await resetPassword(trimmedEmail);
     setResetSending(false);
     if (error) {
       Alert.alert("Error", error.message);
