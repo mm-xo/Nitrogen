@@ -1,152 +1,88 @@
 import * as React from "react";
-import { View, ActivityIndicator, Text } from "react-native";
+import { Platform, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../theme";
+import { Logo } from "../components/Logo";
+import { TabBar } from "./TabBar";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
 import { MapScreen } from "../screens/MapScreen";
-import { Alerts } from "../screens/Alerts";
+import { FeedScreen } from "../screens/FeedScreen";
+import { AlertDetailScreen } from "../screens/AlertDetailScreen";
 import { MyAlertsScreen } from "../screens/MyAlertsScreen";
 import { CreateAlertScreen } from "../screens/CreateAlertScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
-import { COLORS } from "../themes/colors";
-import { SPACING } from "../themes/layout";
+import { EditProfileScreen } from "../screens/EditProfileScreen";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
 
+const push = Platform.select({ android: "ios_from_right", default: "default" });
+
 function MainTabs() {
-    return (
-        <Tabs.Navigator
-            screenOptions={{
-                headerShown: false,
-                tabBarActiveTintColor: COLORS.primary,
-                tabBarInactiveTintColor: COLORS.textSecondary,
-                tabBarStyle: {
-                    backgroundColor: COLORS.card,
-                    borderTopColor: COLORS.border,
-                    borderTopWidth: 1,
-                    paddingTop: SPACING.sm,
-                    height: 120,
-                },
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    fontWeight: "500",
-                },
-                tabBarIconStyle: { marginBottom: -2 },
-            }}
-        >
-            <Tabs.Screen
-                name="Map"
-                component={MapScreen}
-                options={{
-                    title: "Map",
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialCommunityIcons name="map-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="Alerts"
-                component={Alerts}
-                options={{
-                    title: "Alerts",
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialCommunityIcons name="bell-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="MyAlerts"
-                component={MyAlertsScreen}
-                options={{
-                    title: "My Alerts",
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialCommunityIcons name="format-list-bulleted" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="Profile"
-                component={ProfileScreen}
-                options={{
-                    title: "Profile",
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialCommunityIcons name="account-circle-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-        </Tabs.Navigator>
-    );
+  return (
+    <Tabs.Navigator
+      tabBar={(props) => <TabBar {...props} />}
+      screenOptions={{ headerShown: false, animation: "fade" }}
+    >
+      <Tabs.Screen name="Map" component={MapScreen} />
+      <Tabs.Screen name="Feed" component={FeedScreen} />
+      <Tabs.Screen name="Mine" component={MyAlertsScreen} />
+      <Tabs.Screen name="Profile" component={ProfileScreen} />
+    </Tabs.Navigator>
+  );
+}
+
+function Splash() {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg }}>
+      <Animated.View entering={FadeIn.duration(400)}>
+        <Logo size="lg" />
+      </Animated.View>
+    </View>
+  );
 }
 
 export function AppNavigator() {
-    const { session, loading } = useAuth();
+  const { session, loading } = useAuth();
+  const { colors } = useTheme();
 
-    if (loading) {
-        return (
-            <View
-                style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: COLORS.background,
-                }}
-            >
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text
-                    style={{
-                        marginTop: SPACING.lg,
-                        fontSize: 15,
-                        color: COLORS.textSecondary,
-                        fontWeight: "500",
-                    }}
-                >
-                    Loading…
-                </Text>
-            </View>
-        );
-    }
+  if (loading) return <Splash />;
 
-    return (
-        <Stack.Navigator
-            screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: COLORS.background },
-                animation: "slide_from_right",
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: push,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      {!session ? (
+        <Stack.Group screenOptions={{ animation: Platform.OS === "android" ? "fade_from_bottom" : "default" }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
+        </Stack.Group>
+      ) : (
+        <>
+          <Stack.Screen name="Tabs" component={MainTabs} options={{ animation: "fade" }} />
+          <Stack.Screen name="AlertDetail" component={AlertDetailScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen
+            name="CreateAlert"
+            component={CreateAlertScreen}
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+              gestureEnabled: true,
             }}
-        >
-            {!session ? (
-                <>
-                    <Stack.Screen name="Login" component={LoginScreen} />
-                    <Stack.Screen name="Signup" component={SignupScreen} />
-                </>
-            ) : (
-                <>
-                    <Stack.Screen name="MainTabs" component={MainTabs} />
-                    <Stack.Screen
-                        name="CreateAlert"
-                        component={CreateAlertScreen}
-                        options={{
-                            headerShown: true,
-                            title: "Create Alert",
-                            headerStyle: {
-                                backgroundColor: COLORS.card,
-                            },
-                            headerTintColor: COLORS.primary,
-                            headerTitleStyle: {
-                                fontSize: 18,
-                                fontWeight: "600",
-                            },
-                            headerBackTitle: "Back",
-                            contentStyle: { backgroundColor: COLORS.background },
-                        }}
-                    />
-                </>
-            )}
-        </Stack.Navigator>
-    );
+          />
+        </>
+      )}
+    </Stack.Navigator>
+  );
 }

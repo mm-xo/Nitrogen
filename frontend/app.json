@@ -1,31 +1,55 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "Nitrogen",
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Nitrogen uses your location to show nearby alerts and verify you are on campus when posting.",
+        "NSPhotoLibraryUsageDescription": "Attach a photo to an alert."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+        "backgroundColor": "#0E0E11"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "Nitrogen",
+      "themeColor": "#0E0E11"
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": [
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Nitrogen uses your location to show nearby alerts and verify you are on campus when posting."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F7F8",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#09090B"
+          }
+        }
+      ],
+      "expo-status-bar"
+    ],
+    "scheme": "nitrogen"
   }
 }

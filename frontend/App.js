@@ -1,49 +1,89 @@
-import "./global.css";
 import * as React from "react";
-
-import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { NavigationContainer } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
+import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Feather } from "@expo/vector-icons";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
 
-SplashScreen.preventAutoHideAsync();
-import { StyleSheet, Text, View, Button } from 'react-native';
-import { COLORS } from "./src/themes/colors";
-import { SPACING } from "./src/themes/layout";
+import { ThemeProvider, useTheme } from "./src/theme";
+import { ToastProvider } from "./src/ui";
+import { AuthProvider } from "./src/context/AuthContext";
+import { LocationProvider } from "./src/context/LocationContext";
+import LocationWatcher from "./src/location/LocationWatcher";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 
-import ExpoLocation from "./src/location/Expo-Location";
-import { LocationProvider } from "./src/context/Locationcontext";
-import { AuthProvider } from "./src/context/AuthContext";
-import { StatusBar } from "expo-status-bar";
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
+function ThemedNavigation() {
+  const { colors, isDark } = useTheme();
 
-export default function App() {
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+  const navigationTheme = React.useMemo(() => {
+    const base = isDark ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: colors.accent,
+        background: colors.bg,
+        card: colors.surface,
+        text: colors.text,
+        border: colors.border,
+        notification: colors.danger,
+      },
+    };
+  }, [colors, isDark]);
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <LocationProvider>
-          <ExpoLocation />
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </LocationProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <NavigationContainer
+        theme={navigationTheme}
+        documentTitle={{ formatter: (options) => (options?.title ? `${options.title} · Nitrogen` : "Nitrogen") }}
+      >
+        <AppNavigator />
+      </NavigationContainer>
+    </>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: SPACING.md,
-  },
-});
 
+export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    ...Feather.font,
+  });
+  const ready = fontsLoaded || !!fontError;
 
+  React.useEffect(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  if (!ready) return null;
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <LocationProvider>
+                <LocationWatcher />
+                <ThemedNavigation />
+              </LocationProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+}
