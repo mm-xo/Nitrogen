@@ -14,8 +14,9 @@ export function ThemeProvider({ children }) {
   const applyPreference = useCallback((next) => {
     setPreferenceState(next);
     // Keep native chrome (keyboard, pickers, alerts) in step with the in-app theme.
+    // "unspecified" hands control back to the OS (React Native 0.82+ no longer accepts null).
     if (Platform.OS !== "web" && Appearance.setColorScheme) {
-      Appearance.setColorScheme(next === "system" ? null : next);
+      Appearance.setColorScheme(next === "system" ? "unspecified" : next);
     }
   }, []);
 

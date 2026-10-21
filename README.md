@@ -22,14 +22,14 @@ Tokens live in `src/theme/tokens.js`; reusable primitives in `src/ui/`.
 
 ## Tech stack
 
-- Expo SDK 54 (React Native 0.81, new architecture), React Navigation 7
+- Expo SDK 57 (React Native 0.86, React 19.2), React Navigation 7
 - Reanimated 4, Gesture Handler, Expo Haptics, Expo Font (Inter)
 - react-native-maps on iOS/Android, Leaflet + OpenStreetMap on web
 - Data: on-device demo backend (AsyncStorage) or Supabase (Auth, Postgres, Storage, Realtime)
 
 ## Getting started
 
-Requires Node.js 18+ and [Expo Go](https://expo.dev/go) (SDK 54) on a phone, or an iOS Simulator / Android Emulator.
+Requires Node.js 20.19.4+ and [Expo Go](https://expo.dev/go) for SDK 57 on a phone, or an iOS Simulator / Android Emulator.
 
 ```bash
 cd frontend
@@ -40,6 +40,8 @@ npx expo start
 Then scan the QR code with Expo Go, press **a** / **i** for an emulator/simulator, or press **w** for the web build.
 
 On the sign-in screen, tap **Continue with demo account** (or sign in with `demo@myumanitoba.ca` / `nitrogen`), or create a new local account. Everything is stored on that device; **Profile → Reset demo alerts** restores the samples.
+
+**Maps in Expo Go:** Expo Go has dropped Google Maps support on Android (since SDK 53), so the map is blank there; everything else works. iOS uses Apple Maps and is unaffected, and the web build uses OpenStreetMap. To see the map on Android, use a development build with your own Google Maps API key.
 
 Posting requires being on campus. Off campus (or on a simulator), use **Pin to campus instead** in the location card.
 
