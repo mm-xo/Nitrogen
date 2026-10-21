@@ -117,6 +117,7 @@ export function MapScreen() {
         alerts={visible}
         selectedId={selected?.id}
         onSelect={select}
+        controlsInset={tabBarTop + space.sm}
       />
 
       <View style={[s.top, { paddingTop: insets.top + space.sm }]}>

@@ -22,6 +22,7 @@ import {
   useToast,
 } from "../ui";
 import { useTabBarSpace } from "../navigation/TabBar";
+import { MAP_ENGINE_LABEL } from "../components/map/mapEngine";
 import { confirm } from "../utils/dialogs";
 import { displayName, isExpired } from "../utils/format";
 import { haptics } from "../utils/haptics";
@@ -141,6 +142,7 @@ export function ProfileScreen() {
             }
           >
             <Row icon="database" label="Data" value={isLocalBackend ? "On-device demo" : "Supabase"} />
+            <Row icon="map" label="Maps" value={MAP_ENGINE_LABEL} />
             {isLocalBackend ? <Row icon="rotate-ccw" label="Reset demo alerts" onPress={resetDemo} /> : null}
             <Row icon="info" label="Version" value={Constants.expoConfig?.version ?? "1.0.0"} />
           </Section>

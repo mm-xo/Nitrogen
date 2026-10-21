@@ -24,7 +24,7 @@ Tokens live in `src/theme/tokens.js`; reusable primitives in `src/ui/`.
 
 - Expo SDK 57 (React Native 0.86, React 19.2), React Navigation 7
 - Reanimated 4, Gesture Handler, Expo Haptics, Expo Font (Inter)
-- react-native-maps on iOS/Android, Leaflet + OpenStreetMap on web
+- Maps: Apple Maps on iOS, Google Maps on Android builds with a key, otherwise MapLibre + OpenFreeMap (see below)
 - Data: on-device demo backend (AsyncStorage) or Supabase (Auth, Postgres, Storage, Realtime)
 
 ## Getting started
@@ -41,7 +41,18 @@ Then scan the QR code with Expo Go, press **a** / **i** for an emulator/simulato
 
 On the sign-in screen, tap **Continue with demo account** (or sign in with `demo@myumanitoba.ca` / `nitrogen`), or create a new local account. Everything is stored on that device; **Profile → Reset demo alerts** restores the samples.
 
-**Maps in Expo Go:** Expo Go has dropped Google Maps support on Android (since SDK 53), so the map is blank there; everything else works. iOS uses Apple Maps and is unaffected, and the web build uses OpenStreetMap. To see the map on Android, use a development build with your own Google Maps API key.
+### Maps
+
+Each platform gets the map that works best for it (Profile → App → Maps shows which one is active):
+
+| Where | Map | Why |
+|---|---|---|
+| iOS (Expo Go and builds) | Apple Maps, muted style | Native, free, no key |
+| Android build with `GOOGLE_MAPS_ANDROID_API_KEY` | Google Maps, custom minimal style | Native performance and gestures |
+| Android in Expo Go, or without a key | MapLibre + OpenFreeMap in a WebView | Expo Go dropped Google Maps on Android in SDK 53; OpenFreeMap is free with no key or limits |
+| Web | MapLibre + OpenFreeMap in an iframe | Same page as the Android fallback |
+
+To use Google Maps on Android, enable "Maps SDK for Android" in Google Cloud, restrict the key to your package name and signing SHA-1, then set `GOOGLE_MAPS_ANDROID_API_KEY` in `frontend/.env` (or as an EAS environment variable) and make a development or store build. `app.config.js` adds the key at build time.
 
 Posting requires being on campus. Off campus (or on a simulator), use **Pin to campus instead** in the location card.
 
