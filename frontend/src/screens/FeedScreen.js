@@ -12,12 +12,14 @@ import {
   AlertCardSkeleton,
   Button,
   Chip,
+  CompactHeader,
   EmptyState,
   Icon,
   LargeHeader,
   PressableScale,
   Screen,
   Text,
+  useScrollY,
 } from "../ui";
 import { AlertCard } from "../components/AlertCard";
 import { useTabBarSpace } from "../navigation/TabBar";
@@ -41,6 +43,7 @@ export function FeedScreen() {
   const { coordinates, distanceTo } = useLocation();
   const { alerts, status, error, refreshing, refresh, retry, now } = useAlerts({ activeOnly: true });
   const bottomSpace = useTabBarSpace();
+  const { y: scrollY, onScroll } = useScrollY();
 
   const [filter, setFilter] = React.useState(null);
   const [sort, setSort] = React.useState("latest");
@@ -150,6 +153,8 @@ export function FeedScreen() {
         keyExtractor={(a) => a.id}
         ListHeaderComponent={header}
         ListEmptyComponent={body}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={[s.content, { paddingBottom: bottomSpace }]}
         itemLayoutAnimation={LinearTransition.springify().damping(22)}
         renderItem={({ item, index }) => (
@@ -167,6 +172,7 @@ export function FeedScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
+      <CompactHeader title="Feed" scrollY={scrollY} />
     </Screen>
   );
 }

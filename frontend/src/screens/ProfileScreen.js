@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import Constants from "expo-constants";
@@ -8,7 +8,19 @@ import { backend, isLocalBackend } from "../data";
 import { useAuth } from "../context/AuthContext";
 import { useAlerts } from "../hooks/useAlerts";
 import { makeStyles, radius, space, useTheme } from "../theme";
-import { Avatar, Badge, Button, Row, Screen, Section, SegmentedControl, Text, useToast } from "../ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  CompactHeader,
+  Row,
+  Screen,
+  Section,
+  SegmentedControl,
+  Text,
+  useScrollY,
+  useToast,
+} from "../ui";
 import { useTabBarSpace } from "../navigation/TabBar";
 import { confirm } from "../utils/dialogs";
 import { displayName, isExpired } from "../utils/format";
@@ -36,6 +48,7 @@ export function ProfileScreen() {
   const { user, profile, signOut } = useAuth();
   const { alerts, now } = useAlerts({ userId: user?.id });
   const bottomSpace = useTabBarSpace();
+  const { y: scrollY, onScroll } = useScrollY();
 
   const name = displayName(profile, user?.email);
   const live = alerts.filter((a) => !isExpired(a, now)).length;
@@ -64,7 +77,12 @@ export function ProfileScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={[s.content, { paddingBottom: bottomSpace }]} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={[s.content, { paddingBottom: bottomSpace }]}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View entering={enter(0)} style={s.identity}>
           <Avatar name={name} size={72} />
           <Text variant="title" style={s.name}>
@@ -129,7 +147,8 @@ export function ProfileScreen() {
 
           <Button title="Sign out" icon="log-out" variant="danger" onPress={handleSignOut} />
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
+      <CompactHeader title={name} scrollY={scrollY} threshold={150} />
     </Screen>
   );
 }

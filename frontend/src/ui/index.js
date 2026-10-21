@@ -7,6 +7,7 @@ export { Chip } from "./Chip";
 export { SegmentedControl } from "./SegmentedControl";
 export { Skeleton, AlertCardSkeleton } from "./Skeleton";
 export { ToastProvider, useToast } from "./Toast";
+export { CompactHeader, useScrollY } from "./CompactHeader";
 export {
   Screen,
   LargeHeader,

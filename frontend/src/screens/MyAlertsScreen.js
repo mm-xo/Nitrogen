@@ -17,6 +17,7 @@ import { makeStyles, radius, space, useTheme } from "../theme";
 import {
   AlertCardSkeleton,
   Button,
+  CompactHeader,
   EmptyState,
   Icon,
   LargeHeader,
@@ -24,6 +25,7 @@ import {
   Screen,
   SegmentedControl,
   Text,
+  useScrollY,
   useToast,
 } from "../ui";
 import { AlertCard } from "../components/AlertCard";
@@ -63,6 +65,7 @@ export function MyAlertsScreen() {
   const { distanceTo } = useLocation();
   const { alerts, status, error, refreshing, refresh, retry, remove, now } = useAlerts({ userId: user?.id });
   const bottomSpace = useTabBarSpace();
+  const { y: scrollY, onScroll } = useScrollY();
   const [tab, setTab] = React.useState("live");
   // A drag that ends over the card would otherwise also count as a tap (notably on web).
   const lastSwipe = React.useRef(0);
@@ -156,6 +159,8 @@ export function MyAlertsScreen() {
         keyExtractor={(a) => a.id}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={[s.content, { paddingBottom: bottomSpace }]}
         itemLayoutAnimation={LinearTransition.springify().damping(22)}
         showsVerticalScrollIndicator={false}
@@ -192,6 +197,7 @@ export function MyAlertsScreen() {
           </Animated.View>
         )}
       />
+      <CompactHeader title="Your alerts" scrollY={scrollY} />
     </Screen>
   );
 }
