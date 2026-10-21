@@ -34,6 +34,7 @@ export function Chip({ label, selected = false, onPress, icon, color, size = "md
       haptic
       scaleTo={0.95}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
       style={style}
     >

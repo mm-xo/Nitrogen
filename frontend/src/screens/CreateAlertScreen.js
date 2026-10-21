@@ -1,729 +1,464 @@
 import * as React from "react";
-import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  Modal,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
+
+import { ALERT_LIMITS, backend } from "../data";
+import { CATEGORY_LIST, getCategory } from "../constants/categories";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "../context/LocationContext";
-import { backend } from "../data";
-import { isWithinCampus, CAMPUS_CENTER } from "../location/Distance";
-import { withTimeout } from "../utils/promiseUtils";
-import { DARK_COLORS } from "../themes/colors";
+import { isWithinCampus, jitteredCampusPoint } from "../location/Distance";
+import { makeStyles, radius, space, useTheme } from "../theme";
+import { Button, Chip, Icon, IconButton, PressableScale, Text, TextField, useToast } from "../ui";
+import { DateTimeField } from "../components/DateTimeField";
+import { formatClock, formatDateTime, formatDistance } from "../utils/format";
+import { haptics } from "../utils/haptics";
 
-const DB_CATEGORY_MAP = {
-  safety: "Safety",
-  food: "Food",
-  social: "Social",
-  academic: "Academic",
-  sports: "Sports",
-  lostfound: "LostFound",
-  events: "Events",
-};
+const DURATIONS = [
+  { label: "30 min", minutes: 30 },
+  { label: "1 hr", minutes: 60 },
+  { label: "2 hr", minutes: 120 },
+  { label: "4 hr", minutes: 240 },
+  { label: "8 hr", minutes: 480 },
+];
 
-const TITLE_MIN = 3;
-const TITLE_MAX = 100;
-const DESC_MIN = 10;
-const DESC_MAX = 1000;
+const minutesFromNow = (m) => new Date(Date.now() + m * 60_000);
 
-function isSimulatorCoords(lat, lng) {
-  return Math.abs(lat - 37.42) < 0.1 && Math.abs(lng + 122.08) < 0.1;
+function FieldLabel({ children, right }) {
+  const s = useStyles();
+  return (
+    <View style={s.fieldLabel}>
+      <Text variant="overline" color="textSubtle">
+        {children}
+      </Text>
+      {right}
+    </View>
+  );
 }
 
-function FieldError({ error }) {
-  if (!error) return null;
-  return <Text style={styles.fieldError}>{error}</Text>;
-}
+function LocationStatus({ state, distance, onRetry, onUseCampus, onUseDevice }) {
+  const s = useStyles();
+  const { colors } = useTheme();
+  const content = {
+    campus: {
+      icon: "map-pin",
+      tone: "accent",
+      title: "Pinned near campus centre",
+      body: "Test location — handy on simulators or off campus.",
+      action: onUseDevice ? { label: "Use my location", onPress: onUseDevice } : null,
+    },
+    onCampus: {
+      icon: "check-circle",
+      tone: "success",
+      title: "You're on campus",
+      body: "The alert will be pinned where you are now.",
+    },
+    offCampus: {
+      icon: "alert-triangle",
+      tone: "warning",
+      title: `You're ${formatDistance(distance)} from campus`,
+      body: "Alerts can only be posted on Fort Garry campus.",
+      action: { label: "Pin to campus instead", onPress: onUseCampus },
+    },
+    denied: {
+      icon: "map-pin",
+      tone: "textMuted",
+      title: "Location is off",
+      body: "Turn on location access, or pin the alert to campus.",
+      action: { label: "Pin to campus instead", onPress: onUseCampus },
+      secondary: { label: "Try again", onPress: onRetry },
+    },
+    pending: {
+      icon: null,
+      tone: "textMuted",
+      title: "Finding your location…",
+      body: "Hang tight, this usually takes a second.",
+      action: { label: "Pin to campus instead", onPress: onUseCampus },
+    },
+  }[state];
 
-function getDefaultExpiresAt() {
-  const d = new Date();
-  d.setHours(d.getHours() + 2);
-  return d;
-}
-
-function formatExpiresAt(date) {
-  return date.toISOString().replace("T", " ").slice(0, 19);
-}
-
-function getDurationHours(expiresAt) {
-  const hours = Math.max(1, Math.round((expiresAt - Date.now()) / (1000 * 60 * 60)));
-  return Math.min(hours, 32767);
+  return (
+    <Animated.View key={state} entering={FadeIn.duration(220)} style={s.locationCard}>
+      <View style={s.locationRow}>
+        {content.icon ? (
+          <Icon name={content.icon} size={18} color={content.tone} />
+        ) : (
+          <ActivityIndicator size="small" color={colors.textMuted} />
+        )}
+        <View style={s.flex}>
+          <Text variant="callout">{content.title}</Text>
+          <Text variant="caption" color="textMuted" style={s.locationBody}>
+            {content.body}
+          </Text>
+        </View>
+      </View>
+      {content.action || content.secondary ? (
+        <View style={s.locationActions}>
+          {content.secondary ? (
+            <Button title={content.secondary.label} variant="secondary" size="sm" full={false} onPress={content.secondary.onPress} />
+          ) : null}
+          {content.action ? (
+            <Button title={content.action.label} variant="secondary" size="sm" full={false} onPress={content.action.onPress} />
+          ) : null}
+        </View>
+      ) : null}
+    </Animated.View>
+  );
 }
 
 export function CreateAlertScreen() {
-  const { session } = useAuth();
+  const s = useStyles();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const toast = useToast();
+  const { user } = useAuth();
   const { coordinates, locationError, requestLocationRetry } = useLocation();
 
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  const [category, setCategory] = useState("safety");
-  const [expiresAt, setExpiresAt] = useState(getDefaultExpiresAt());
-  const [photoUri, setPhotoUri] = useState(null);
-  const [photoBase64, setPhotoBase64] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [locationDebug, setLocationDebug] = useState(null);
-  const [useTestLocation, setUseTestLocation] = useState(false);
-  const [showExpiresPicker, setShowExpiresPicker] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [category, setCategory] = React.useState(null);
+  const [title, setTitle] = React.useState("");
+  const [message, setMessage] = React.useState("");
+  const [duration, setDuration] = React.useState(120);
+  const [customEnd, setCustomEnd] = React.useState(() => minutesFromNow(180));
+  const [photo, setPhoto] = React.useState(null);
+  const [pinToCampus, setPinToCampus] = React.useState(false);
+  const [campusPoint] = React.useState(() => jitteredCampusPoint());
+  const [attempted, setAttempted] = React.useState(false);
+  const [serverErrors, setServerErrors] = React.useState({});
+  const [submitting, setSubmitting] = React.useState(false);
 
-  const CATEGORY_OPTIONS = [
-    { value: "food", label: "Food", icon: "food" },
-    { value: "safety", label: "Safety", icon: "alert-circle" },
-    { value: "social", label: "Social", icon: "account-group" },
-    { value: "academic", label: "Academic", icon: "school" },
-    { value: "sports", label: "Sports", icon: "trophy" },
-    { value: "lostfound", label: "Lost & Found", icon: "magnify" },
-    { value: "events", label: "Events", icon: "bullhorn" },
-  ];
+  const { within, distanceM } = isWithinCampus(coordinates);
+  const locationState = pinToCampus
+    ? "campus"
+    : coordinates
+      ? within
+        ? "onCampus"
+        : "offCampus"
+      : locationError
+        ? "denied"
+        : "pending";
+  const point = pinToCampus ? campusPoint : coordinates;
+  const locationOk = locationState === "campus" || locationState === "onCampus";
 
-  const titleValid = title.length >= TITLE_MIN && title.length <= TITLE_MAX;
-  const descValid = desc.length >= DESC_MIN && desc.length <= DESC_MAX;
-  const { within: withinCampus } = isWithinCampus(useTestLocation ? { lat: CAMPUS_CENTER.lat, lng: CAMPUS_CENTER.lng } : coordinates);
-  const canSubmit =
-    titleValid &&
-    descValid &&
-    !!category &&
-    (useTestLocation || (coordinates && withinCampus)) &&
-    !locationError &&
-    !loading;
+  const expiresAt = duration === "custom" ? customEnd : minutesFromNow(duration);
 
-  function validateRealtime(field, value) {
-    setErrors((e) => {
-      const next = { ...e };
-      if (field === "title") {
-        if (!value.trim()) next.title = null;
-        else if (value.length < TITLE_MIN) next.title = `Min ${TITLE_MIN} characters`;
-        else if (value.length > TITLE_MAX) next.title = `Max ${TITLE_MAX} characters`;
-        else next.title = null;
-      }
-      if (field === "desc") {
-        if (!value.trim()) next.desc = null;
-        else if (value.length < DESC_MIN) next.desc = `Min ${DESC_MIN} characters`;
-        else if (value.length > DESC_MAX) next.desc = `Max ${DESC_MAX} characters`;
-        else next.desc = null;
-      }
-      return next;
-    });
-  }
-
-  function getCoordsForSubmit() {
-    if (useTestLocation) {
-      return { latitude: CAMPUS_CENTER.lat, longitude: CAMPUS_CENTER.lng };
-    }
-    if (coordinates) {
-      return { latitude: coordinates.lat, longitude: coordinates.lng };
-    }
-    return null;
-  }
+  const t = title.trim();
+  const m = message.trim();
+  const errors = {
+    category: !category ? "Pick a category" : null,
+    title:
+      t.length < ALERT_LIMITS.titleMin ? `At least ${ALERT_LIMITS.titleMin} characters` : null,
+    message:
+      m.length < ALERT_LIMITS.messageMin ? `At least ${ALERT_LIMITS.messageMin} characters` : null,
+    expires: expiresAt.getTime() <= Date.now() + 60_000 ? "Pick a time in the future" : null,
+    ...serverErrors,
+  };
+  const valid = Object.values(errors).every((e) => !e) && locationOk;
+  const show = (key, dirty) => (attempted || dirty ? errors[key] : null);
 
   async function pickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission needed", "Allow access to photos to add an image.");
+      toast.show("Photo access is off", { tone: "info", message: "Allow photo access in Settings to attach one." });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.8,
+      quality: 0.6,
       base64: true,
     });
     if (!result.canceled && result.assets?.[0]) {
-      const asset = result.assets[0];
-      setPhotoUri(asset.uri);
-      setPhotoBase64(asset.base64 || null);
+      const a = result.assets[0];
+      setPhoto({ uri: a.uri, base64: a.base64 ?? null, mimeType: a.mimeType ?? null });
+      haptics.soft();
     }
   }
 
-  function removePhoto() {
-    setPhotoUri(null);
-    setPhotoBase64(null);
-  }
-
-  async function uploadPhoto(uri, base64Data) {
-    if (!uri && !base64Data) return null;
-    return backend.storage.uploadPhoto({ uri, base64: base64Data, userId: session?.user?.id });
-  }
-
-  function setOutsideCampusError(coords) {
-    const lat = coords?.latitude ?? coords?.lat;
-    const lng = coords?.longitude ?? coords?.lng;
-    const sim = lat != null && lng != null && isSimulatorCoords(lat, lng);
-    setLocationDebug(
-      sim
-        ? "Simulators use a fixed location (California). Use the button below to test with campus coordinates."
-        : `GPS: ${lat?.toFixed(5)}, ${lng?.toFixed(5)}. You must be within campus (U of M Fort Garry) to create alerts.`
-    );
-  }
-
-  async function onSubmit() {
-    if (!canSubmit) return;
-
-    const coords = getCoordsForSubmit();
-    if (!coords) {
-      Alert.alert(
-        "Location required",
-        "Please enable location access and wait for your position to load."
-      );
+  async function submit() {
+    setAttempted(true);
+    if (!valid) {
+      haptics.warning();
       return;
     }
-
-    setLoading(true);
-    setErrors({});
-    setLocationDebug(null);
-
+    setSubmitting(true);
     try {
-      if (!useTestLocation) {
-        const { within, distanceM } = isWithinCampus(coordinates);
-        if (!within) {
-          setLocationDebug(
-            isSimulatorCoords(coordinates.lat, coordinates.lng)
-              ? "Simulators use a fixed location (California). Use the button below to test with campus coordinates."
-              : `You are ${Math.round(distanceM)}m from campus. Alerts can only be created on U of M Fort Garry campus.`
-          );
-          return;
-        }
-      }
-      let photoUrl = null;
-      if (photoUri || photoBase64) {
-        try {
-          photoUrl = await withTimeout(
-            uploadPhoto(photoUri, photoBase64),
-            20000,
-            "Photo upload timed out"
-          );
-        } catch (err) {
-          Alert.alert("Upload failed", err?.message || "Could not upload photo.");
-          return;
-        }
-      }
-
-      const dbCategory = DB_CATEGORY_MAP[category];
-      const expiresAtStr = formatExpiresAt(expiresAt);
-      const durationHours = getDurationHours(expiresAt);
-
-      let error = null;
-      try {
-        await backend.alerts.create({
-          user_id: session?.user?.id,
-          title: title.trim(),
-          message: desc.trim(),
-          category: dbCategory,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          expires_at: expiresAt.toISOString(),
-          photo_url: photoUrl,
-        });
-      } catch (e) {
-        error = e;
-      }
-
-      if (error) {
-        if (error.code === "outside_campus") {
-          setOutsideCampusError(coords);
-          setUseTestLocation(false);
-          return;
-        }
-        const msg = (error?.message || "").toLowerCase();
-        if (msg.includes("longitude_check") || msg.includes("latitude_check") || msg.includes("outside") || msg.includes("campus") || msg.includes("bounds")) {
-          setOutsideCampusError(coords);
-          setUseTestLocation(false);
-          return;
-        }
-        if (msg.includes("title_check") || (msg.includes("title") && msg.includes("length"))) {
-          setErrors((e) => ({ ...e, title: "Title must be 3–100 characters" }));
-          return;
-        }
-        if (msg.includes("message_check") || (msg.includes("message") && msg.includes("length"))) {
-          setErrors((e) => ({ ...e, desc: "Description must be 10–1000 characters" }));
-          return;
-        }
-        if (msg.includes("category_check")) {
-          setErrors((e) => ({ ...e, category: "Invalid category" }));
-          return;
-        }
-        Alert.alert("Error", error?.message || "Could not create alert.");
-        return;
-      }
-
+      const photoUrl = photo
+        ? await backend.storage.uploadPhoto({ ...photo, userId: user.id })
+        : null;
+      await backend.alerts.create({
+        user_id: user.id,
+        title: t,
+        message: m,
+        category: getCategory(category).db,
+        latitude: point.lat,
+        longitude: point.lng,
+        expires_at: expiresAt.toISOString(),
+        photo_url: photoUrl,
+      });
+      haptics.success();
+      toast.show("Alert posted", { message: "It's live on the map and feed." });
       navigation.goBack();
-    } catch (err) {
-      Alert.alert("Error", err?.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      haptics.error();
+      if (e?.code === "outside_campus") {
+        toast.show("Outside campus", { tone: "error", message: e.message });
+      } else if (e?.field) {
+        setServerErrors({ [e.field]: e.message });
+      } else {
+        toast.show("Couldn't post alert", { tone: "error", message: e?.message });
+      }
+      setSubmitting(false);
     }
   }
 
-  const inputStyle = (hasError) => [
-    styles.input,
-    hasError && styles.inputError,
-  ];
-
   return (
-    <SafeAreaView style={styles.safe} edges={["bottom"]}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.label}>Title</Text>
-          <TextInput
-            style={inputStyle(!!errors.title)}
-            placeholder="Enter alert title"
-            placeholderTextColor={DARK_COLORS.muted}
-            value={title}
-            onChangeText={(v) => {
-              setTitle(v);
-              validateRealtime("title", v);
-            }}
-            editable={!loading}
-          />
-          <FieldError error={errors.title} />
+    <View style={s.root}>
+      <View style={[s.header, { paddingTop: Platform.OS === "ios" ? space.lg : insets.top + space.sm }]}>
+        <Text variant="title">New alert</Text>
+        <IconButton icon="x" variant="tinted" size={34} accessibilityLabel="Close" onPress={() => navigation.goBack()} />
+      </View>
 
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[inputStyle(!!errors.desc), styles.descInput]}
-            placeholder="Describe the alert..."
-            placeholderTextColor={DARK_COLORS.muted}
-            value={desc}
-            onChangeText={(v) => {
-              setDesc(v);
-              validateRealtime("desc", v);
-            }}
-            multiline
-            editable={!loading}
-          />
-          <FieldError error={errors.desc} />
-
-          <View style={styles.row}>
-            <MaterialCommunityIcons
-              name={CATEGORY_OPTIONS.find((o) => o.value === category)?.icon ?? "bell-outline"}
-              size={20}
-              color={DARK_COLORS.accent}
-            />
-            <Text style={styles.label}>Category</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.pickerWrap, !!errors.category && styles.inputError]}
-            onPress={() => setShowCategoryModal(true)}
-            disabled={loading}
-          >
-            <View style={styles.pickerInner}>
-              <MaterialCommunityIcons
-                name={CATEGORY_OPTIONS.find((o) => o.value === category)?.icon ?? "bell-outline"}
-                size={20}
-                color={DARK_COLORS.accent}
-              />
-              <Text style={styles.pickerText}>
-                {CATEGORY_OPTIONS.find((o) => o.value === category)?.label || "Safety"}
-              </Text>
-              <MaterialCommunityIcons
-                name="chevron-down"
-                size={22}
-                color={DARK_COLORS.muted}
-              />
+      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <Animated.View entering={FadeInDown.delay(40).duration(400)}>
+            <FieldLabel>Category</FieldLabel>
+            <View style={s.categories}>
+              {CATEGORY_LIST.map((c) => (
+                <Chip
+                  key={c.value}
+                  label={c.label}
+                  icon={c.icon}
+                  color={c.color}
+                  selected={category === c.value}
+                  onPress={() => {
+                    setCategory(c.value);
+                    setServerErrors({});
+                  }}
+                />
+              ))}
             </View>
-          </TouchableOpacity>
-          <Modal
-            visible={showCategoryModal}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setShowCategoryModal(false)}
-          >
-            <TouchableOpacity
-              style={styles.modalOverlay}
-              activeOpacity={1}
-              onPress={() => setShowCategoryModal(false)}
-            >
-              <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-                <Text style={styles.modalTitle}>Select category</Text>
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[styles.modalOption, category === opt.value && styles.modalOptionActive]}
-                    onPress={() => {
-                      setCategory(opt.value);
-                      setErrors((e) => ({ ...e, category: null }));
-                      setShowCategoryModal(false);
-                    }}
-                  >
-                    <MaterialCommunityIcons
-                      name={opt.icon}
-                      size={22}
-                      color={category === opt.value ? DARK_COLORS.accent : DARK_COLORS.muted}
-                    />
-                    <Text style={[styles.modalOptionText, category === opt.value && styles.modalOptionTextActive]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-                <TouchableOpacity
-                  style={styles.modalCancel}
-                  onPress={() => setShowCategoryModal(false)}
-                >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </Modal>
-          <FieldError error={errors.category} />
+            {show("category", false) ? (
+              <Text variant="caption" color="danger" style={s.inlineError}>
+                {errors.category}
+              </Text>
+            ) : null}
+          </Animated.View>
 
-          <Text style={styles.label}>Expires at</Text>
-          <TouchableOpacity
-            style={styles.expiresRow}
-            onPress={() => setShowExpiresPicker(true)}
-            disabled={loading}
-          >
-            <MaterialCommunityIcons
-              name="clock-outline"
-              size={20}
-              color={DARK_COLORS.muted}
-            />
-            <Text style={styles.expiresText}>
-              {expiresAt.toLocaleString(undefined, {
-                dateStyle: "short",
-                timeStyle: "short",
-              })}
-            </Text>
-          </TouchableOpacity>
-          {showExpiresPicker && (
-            <DateTimePicker
-              value={expiresAt}
-              mode="datetime"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              minimumDate={new Date()}
-              onChange={(_, date) => {
-                setShowExpiresPicker(Platform.OS === "ios");
-                if (date) setExpiresAt(date);
+          <Animated.View entering={FadeInDown.delay(90).duration(400)} style={s.block}>
+            <TextField
+              label="Title"
+              placeholder="What's happening?"
+              value={title}
+              onChangeText={(v) => {
+                setTitle(v);
+                setServerErrors({});
               }}
+              maxLength={ALERT_LIMITS.titleMax}
+              showCount
+              error={show("title", t.length > 0)}
+              returnKeyType="next"
+              editable={!submitting}
             />
-          )}
+            <TextField
+              label="Details"
+              placeholder="Where exactly, until when, who to ask…"
+              value={message}
+              onChangeText={(v) => {
+                setMessage(v);
+                setServerErrors({});
+              }}
+              maxLength={ALERT_LIMITS.messageMax}
+              showCount
+              multiline
+              error={show("message", m.length > 0)}
+              editable={!submitting}
+            />
+          </Animated.View>
 
-          <Text style={styles.label}>Photo (optional)</Text>
-          {photoUri ? (
-            <View style={styles.photoPreview}>
-              <Image source={{ uri: photoUri }} style={styles.photoImage} />
-              <TouchableOpacity
-                style={styles.removePhotoBtn}
-                onPress={removePhoto}
-                disabled={loading}
-              >
-                <MaterialCommunityIcons name="close-circle" size={28} color={DARK_COLORS.error} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.addPhotoBtn}
-              onPress={pickPhoto}
-              disabled={loading}
+          <Animated.View entering={FadeInDown.delay(140).duration(400)} layout={LinearTransition} style={s.block}>
+            <FieldLabel
+              right={
+                <Text variant="caption" color="textMuted">
+                  Ends {duration === "custom" ? formatDateTime(expiresAt) : `at ${formatClock(expiresAt)}`}
+                </Text>
+              }
             >
-              <MaterialCommunityIcons name="camera-plus-outline" size={32} color={DARK_COLORS.muted} />
-              <Text style={styles.addPhotoText}>Add photo</Text>
-            </TouchableOpacity>
-          )}
-
-          {locationError && (
-            <>
-              <Text style={styles.locationError}>
-                <MaterialCommunityIcons name="alert-circle" size={16} color={DARK_COLORS.error} />{" "}
-                {locationError}
+              Duration
+            </FieldLabel>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.durations}>
+              {DURATIONS.map((d) => (
+                <Chip key={d.minutes} label={d.label} size="sm" selected={duration === d.minutes} onPress={() => setDuration(d.minutes)} />
+              ))}
+              <Chip label="Custom" icon="calendar" size="sm" selected={duration === "custom"} onPress={() => setDuration("custom")} />
+            </ScrollView>
+            {duration === "custom" ? (
+              <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.custom}>
+                <DateTimeField value={customEnd} onChange={setCustomEnd} minimumDate={new Date()} />
+              </Animated.View>
+            ) : null}
+            {show("expires", duration === "custom") ? (
+              <Text variant="caption" color="danger" style={s.inlineError}>
+                {errors.expires}
               </Text>
-              <TouchableOpacity
-                style={styles.retryLocationBtn}
-                onPress={requestLocationRetry}
-                disabled={loading}
-              >
-                <Text style={styles.retryText}>Retry location permission</Text>
-              </TouchableOpacity>
-            </>
-          )}
+            ) : null}
+          </Animated.View>
 
-          {locationDebug && (
-            <>
-              <Text style={styles.locationError}>
-                <MaterialCommunityIcons name="alert-circle" size={16} color={DARK_COLORS.error} />{" "}
-                Outside campus
-              </Text>
-              <Text style={styles.locationDebug} selectable>
-                {locationDebug}
-              </Text>
-              <TouchableOpacity
-                style={styles.retryLocationBtn}
-                onPress={() => {
-                  setUseTestLocation(true);
-                  setLocationDebug(null);
-                }}
-                disabled={loading}
-              >
-                <Text style={styles.retryText}>Use campus coordinates (for simulator/testing)</Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {useTestLocation && (
-            <Text style={styles.testLocationHint}>
-              Using campus test location
-            </Text>
-          )}
-
-          <TouchableOpacity
-            onPress={onSubmit}
-            disabled={!canSubmit}
-            activeOpacity={0.85}
-            style={[styles.cta, !canSubmit && styles.ctaDisabled]}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
+          <Animated.View entering={FadeInDown.delay(190).duration(400)} layout={LinearTransition} style={s.block}>
+            <FieldLabel>Photo · optional</FieldLabel>
+            {photo ? (
+              <Animated.View entering={FadeIn.duration(250)} style={s.photoWrap}>
+                <Image source={{ uri: photo.uri }} style={s.photo} />
+                <IconButton
+                  icon="x"
+                  size={30}
+                  variant="floating"
+                  accessibilityLabel="Remove photo"
+                  onPress={() => setPhoto(null)}
+                  style={s.photoRemove}
+                />
+              </Animated.View>
             ) : (
-              <Text style={styles.ctaText}>Submit</Text>
+              <PressableScale onPress={pickPhoto} haptic style={s.addPhoto} accessibilityRole="button" accessibilityLabel="Add photo">
+                <Icon name="image" size={20} color="textMuted" />
+                <Text variant="callout" color="textMuted">
+                  Add a photo
+                </Text>
+              </PressableScale>
             )}
-          </TouchableOpacity>
+          </Animated.View>
 
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.cancelBtn}
-            disabled={loading}
-          >
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
+          <Animated.View entering={FadeInDown.delay(240).duration(400)} layout={LinearTransition} style={s.block}>
+            <FieldLabel>Location</FieldLabel>
+            <LocationStatus
+              state={locationState}
+              distance={distanceM}
+              onRetry={requestLocationRetry}
+              onUseCampus={() => {
+                haptics.tap();
+                setPinToCampus(true);
+              }}
+              onUseDevice={coordinates ? () => setPinToCampus(false) : null}
+            />
+          </Animated.View>
         </ScrollView>
+
+        <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>
+          <Button
+            title="Post alert"
+            icon="send"
+            onPress={submit}
+            loading={submitting}
+            disabled={attempted && !valid}
+          />
+        </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
+const useStyles = makeStyles((c) => ({
+  root: {
     flex: 1,
-    backgroundColor: DARK_COLORS.bg,
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: DARK_COLORS.muted,
-    marginBottom: 6,
-  },
-  row: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
+    justifyContent: "space-between",
+    paddingHorizontal: space.xl,
+    paddingBottom: space.md,
   },
-  input: {
-    fontSize: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: DARK_COLORS.inputBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: DARK_COLORS.border,
-    marginBottom: 4,
-    color: DARK_COLORS.text,
-  },
-  inputError: {
-    borderColor: DARK_COLORS.error,
-  },
-  descInput: {
-    minHeight: 100,
-    textAlignVertical: "top",
-  },
-  pickerWrap: {
-    marginBottom: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: DARK_COLORS.border,
-    backgroundColor: DARK_COLORS.inputBg,
-  },
-  pickerInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  pickerText: {
-    flex: 1,
-    fontSize: 16,
-    color: DARK_COLORS.text,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: DARK_COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: DARK_COLORS.text,
-    marginBottom: 16,
-  },
-  modalOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 4,
-  },
-  modalOptionActive: {
-    backgroundColor: "rgba(236, 72, 153, 0.15)",
-  },
-  modalOptionText: {
-    fontSize: 16,
-    color: DARK_COLORS.text,
-  },
-  modalOptionTextActive: {
-    color: DARK_COLORS.accent,
-    fontWeight: "600",
-  },
-  modalCancel: {
-    marginTop: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  modalCancelText: {
-    fontSize: 15,
-    color: DARK_COLORS.muted,
-  },
-  expiresRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: DARK_COLORS.inputBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: DARK_COLORS.border,
-  },
-  expiresText: {
-    fontSize: 16,
-    color: DARK_COLORS.text,
-  },
-  addPhotoBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 24,
-    marginBottom: 16,
-    backgroundColor: DARK_COLORS.inputBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: DARK_COLORS.border,
-  },
-  addPhotoText: {
-    fontSize: 16,
-    color: DARK_COLORS.muted,
-  },
-  photoPreview: {
-    position: "relative",
-    marginBottom: 16,
-  },
-  photoImage: {
+  content: {
     width: "100%",
-    height: 180,
-    borderRadius: 12,
-    backgroundColor: DARK_COLORS.card,
+    maxWidth: 560,
+    alignSelf: "center",
+    paddingHorizontal: space.xl,
+    paddingTop: space.sm,
+    paddingBottom: space.xxxl,
   },
-  removePhotoBtn: {
-    position: "absolute",
-    top: 8,
-    right: 8,
+  block: {
+    marginTop: space.xxl,
   },
-  locationError: {
-    fontSize: 13,
-    color: DARK_COLORS.error,
-    marginBottom: 4,
+  fieldLabel: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: space.md,
   },
-  locationDebug: {
-    fontSize: 11,
-    color: DARK_COLORS.muted,
-    marginBottom: 12,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+  categories: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: space.sm,
   },
-  testLocationHint: {
-    fontSize: 12,
-    color: DARK_COLORS.muted,
-    marginBottom: 12,
+  inlineError: {
+    marginTop: space.sm,
   },
-  retryLocationBtn: {
-    alignSelf: "flex-start",
-    marginBottom: 16,
+  bleed: {
+    marginHorizontal: -space.xl,
   },
-  retryText: {
-    fontSize: 14,
-    color: DARK_COLORS.accent,
-    fontWeight: "600",
+  durations: {
+    gap: space.sm,
+    paddingHorizontal: space.xl,
   },
-  fieldError: {
-    fontSize: 12,
-    color: DARK_COLORS.error,
-    marginBottom: 12,
+  custom: {
+    marginTop: space.md,
   },
-  cta: {
-    backgroundColor: DARK_COLORS.accent,
-    borderRadius: 8,
-    paddingVertical: 16,
+  addPhoto: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
+    gap: space.sm,
+    height: 72,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: c.borderStrong,
   },
-  ctaDisabled: {
-    opacity: 0.5,
+  photoWrap: {
+    borderRadius: radius.lg,
+    overflow: "hidden",
   },
-  ctaText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+  photo: {
+    width: "100%",
+    aspectRatio: 4 / 3,
+    backgroundColor: c.surfaceAlt,
   },
-  cancelBtn: {
-    alignItems: "center",
-    paddingVertical: 16,
-    marginTop: 12,
+  photoRemove: {
+    position: "absolute",
+    top: space.sm,
+    right: space.sm,
   },
-  cancelText: {
-    fontSize: 15,
-    color: DARK_COLORS.muted,
+  locationCard: {
+    padding: space.lg,
+    borderRadius: radius.lg,
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
   },
-});
+  locationRow: {
+    flexDirection: "row",
+    gap: space.md,
+  },
+  locationBody: {
+    marginTop: 2,
+  },
+  locationActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: space.sm,
+    marginTop: space.md,
+  },
+  footer: {
+    paddingHorizontal: space.xl,
+    paddingTop: space.md,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+    backgroundColor: c.bg,
+  },
+}));

@@ -71,6 +71,7 @@ export const TextField = React.forwardRef(function TextField(
         {icon ? <Icon name={icon} size={18} color="textSubtle" style={s.leadingIcon} /> : null}
         <TextInput
           ref={ref}
+          accessibilityLabel={label}
           value={value}
           editable={editable}
           maxLength={maxLength}
